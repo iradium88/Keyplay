@@ -159,6 +159,8 @@ body.v-lesson .kbwrap{position:static;flex:none}
 .scrno{font-size:12px;font-weight:600;color:#A9A9B8;font-variant-numeric:tabular-nums;min-width:38px;text-align:right}
 .credit{position:fixed;left:0;right:0;bottom:14px;font-size:12px;color:#A9A9B8;margin:0}.credit a{color:inherit}
 .midi{display:none!important}
+#prev{font-size:16px;font-weight:600;color:var(--ink2);white-space:nowrap}
+.footer #back{display:none}
 </style>
 </head>
 <body>
@@ -171,7 +173,7 @@ body.v-lesson .kbwrap{position:static;flex:none}
 </header>
 
 <main>
-  <div class="lessonbar"><button class="x" id="close" aria-label="Back to your path">✕</button><div class="progress"><div id="bar"></div></div><span class="scrno" id="scrno"></span></div>
+  <div class="lessonbar"><button class="x" id="close" aria-label="Back to your path">✕</button><button class="x" id="prev" aria-label="Previous screen">‹ Back</button><div class="progress"><div id="bar"></div></div><span class="scrno" id="scrno"></span></div>
   <section id="screen"></section>
 </main>
 
@@ -916,6 +918,7 @@ function showPath(){
 }
 function startLesson(id = "1.1"){ lessonId = id; screens = LESSONS[id]; document.body.className = "v-lesson"; go(0); }
 document.getElementById("close").onclick = showPath;
+document.getElementById("prev").onclick = () => idx === 0 ? showPath() : go(idx - 1);
 document.getElementById("home").onclick = () => load().welcomed ? showPath() : showWelcome();
 document.addEventListener("pointerdown", () => audio(), { once: true });
 buildKeyboard();
