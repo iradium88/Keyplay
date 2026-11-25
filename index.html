@@ -596,7 +596,7 @@ const L12 = [
           else { flash(n, "no"); $("#fb").className = "feedback bad"; $("#fb").textContent = "Not that one. Find the lit key."; }
         } else if(step === 1){
           if(n === A + 12){ flash(n, "ok"); step = 2;
-            $("#hd").textContent = "Same sound, higher"; $("#t").textContent = "Now press both lit keys together. They sound like one.";
+            $("#hd").textContent = "Same sound, higher"; $("#t").textContent = "Here they are together. They sound like one."; setTimeout(() => { playNote(A, 1.6); playNote(A + 12, 1.6); }, 700);
             $("#fb").className = "feedback good"; $("#fb").textContent = `${freq(A).toFixed(0)} × 2 = ${freq(A + 12).toFixed(0)} Hz`; setHints([A, A + 12]); enableNext(); }
           else { flash(n, "no"); $("#fb").className = "feedback bad";
             $("#fb").textContent = `${freq(n).toFixed(0)} Hz. ${freq(n) < freq(A) * 2 ? "Go higher." : "Too high."}`; }
@@ -1119,26 +1119,29 @@ const L14 = [
       });
       this.cleanup = pairOff;
   }},
-  // guided pairs on the keys: octave, ×1.5, neighbours
+  // guided pairs: the app holds the low key, you play the lit partner (works with one finger or a mouse)
   { keys: true, render(){
       const lo = base + 2; const steps = [
         [lo + 12, "Same sound, higher. Very smooth."],
         [lo + 7, "Also smooth. These two are about ×1.5."],
         [lo + 1, "Rough. Close neighbours rub against each other."]];
-      let k = 0, gotLo = false, gotHi = false;
-      h(`<h1 id="hd">Play both lit keys together</h1>
+      let k = 0, busy = false, tm = [];
+      h(`<h1 id="hd">Play the lit key</h1>
+      <p>We hold the other one for you.</p>
       <p class="muted" id="st">Pair 1 of 3</p>
       <div class="feedback" id="fb"></div>
       ${footer("Continue", false)}`); wireFooter();
-      const show = () => { setHints([lo, steps[k][0]]); gotLo = gotHi = false; $("#st").textContent = `Pair ${k + 1} of 3`; };
+      const keyEl = n => kbEl.querySelector(`[data-n="${n}"]`);
+      const hold = on => { const el = keyEl(lo); if(on){ noteOnSound(lo, 0.6); el && el.classList.add("down"); } else { noteOffSound(lo); el && el.classList.remove("down"); } };
+      const show = () => { busy = false; setHints([steps[k][0]]); hold(true); $("#st").textContent = `Pair ${k + 1} of 3`; $("#fb").textContent = ""; };
       show();
       this.onNote = n => {
-        if(k >= steps.length) return;
-        if(n === lo) gotLo = true; if(n === steps[k][0]) gotHi = true;
-        if(gotLo && gotHi){ $("#fb").className = "feedback good"; $("#fb").textContent = steps[k][1]; k++;
-          if(k < steps.length) setTimeout(show, 900); else { setHints([]); $("#st").textContent = "All 3 pairs heard"; enableNext(); } }
+        if(busy || k >= steps.length) return;
+        if(n === steps[k][0]){ busy = true; flash(n, "ok"); $("#fb").className = "feedback good"; $("#fb").textContent = steps[k][1]; k++;
+          tm.push(setTimeout(() => { hold(false); if(k < steps.length) tm.push(setTimeout(show, 500)); else { setHints([]); $("#st").textContent = "All 3 pairs heard"; enableNext(); } }, 1800)); }
+        else if(n !== lo){ flash(n, "no"); $("#fb").className = "feedback bad"; $("#fb").textContent = "Find the lit key."; }
       };
-      this.cleanup = () => setHints([]);
+      this.cleanup = () => { tm.forEach(clearTimeout); hold(false); setHints([]); };
   }},
   // practice: smooth or rough
   { render(){
@@ -1153,7 +1156,7 @@ const L14 = [
       <div class="feedback" id="fb"></div>
       ${footer("Continue", false)}`); wireFooter();
       let lo;
-      const hear = () => chord([lo, lo + cur[0]]);
+      const hear = () => chord([lo, lo + cur[0]], 4);
       const next = () => {
         if(r >= rounds.length){ res14 = { right, rounds: rounds.length }; $("#fb").className = "feedback good"; $("#fb").textContent = `Done. ${right} of ${rounds.length} right.`; enableNext(); return; }
         screenEl.querySelectorAll(".choice").forEach(c => c.className = "choice");
@@ -1164,7 +1167,7 @@ const L14 = [
       screenEl.querySelectorAll(".choice").forEach(c => c.onclick = () => {
         if(r >= rounds.length) return;
         if(+c.dataset.c === cur[1]){ c.classList.add("right"); if(first) right++; $("#sc").textContent = `${right} right`;
-          $("#fb").className = "feedback good"; $("#fb").textContent = cur[0] === 12 ? "Yes, an octave." : "Yes."; r++; setTimeout(next, 1100); }
+          $("#fb").className = "feedback good"; $("#fb").textContent = cur[0] === 12 ? "Yes, an octave." : "Yes."; r++; setTimeout(next, 1600); }
         else { c.classList.add("wrong"); first = false; $("#fb").className = "feedback bad"; $("#fb").textContent = "Listen again."; }
       });
       setTimeout(next, 400);
