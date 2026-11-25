@@ -319,25 +319,39 @@ function click(){
 }
 // click train: looping buffer with one impulse per period
 let train = null;
+// Pulse generator: one soft pulse per period, generated sample by sample so the
+// rate can glide while you drag (no restarts, no pops). Each pulse is a short
+// raised-cosine bump; its width is capped at half a period, so slow rates sound
+// like soft clicks and fast rates melt into a warm, rounded tone.
 function startTrain(rate){
-  const c = audio(); stopTrain();
-  // loop of the same wooden tock as the Tap screen, one per period,
-  // overlapping tails wrapped around so the loop is seamless
-  const sr = c.sampleRate, period = Math.max(2, Math.round(sr / rate));
-  const tockLen = Math.floor(sr * 0.06), m = Math.max(1, Math.ceil(tockLen / period));
-  const len = period * m, b = c.createBuffer(1, len, sr), d = b.getChannelData(0);
-  for(let k = 0; k < m; k++) for(let i = 0; i < tockLen; i++){
-    const t = i / sr, on = Math.min(1, t / 0.001);
-    d[(k * period + i) % len] += on * (0.7 * Math.exp(-t / 0.012) * Math.sin(2 * Math.PI * 1150 * t) + 0.3 * Math.exp(-t / 0.006) * Math.sin(2 * Math.PI * 2850 * t));
-  }
-  let pk = 0; for(let i = 0; i < len; i++) pk = Math.max(pk, Math.abs(d[i]));
-  if(pk > 1) for(let i = 0; i < len; i++) d[i] /= pk;
-  const s = c.createBufferSource(); s.buffer = b; s.loop = true;
-  const g = c.createGain(); g.gain.value = rate > 60 ? 0.45 : 0.8;
-  s.connect(g); g.connect(master); s.start();
-  train = { s, g };
+  const c = audio();
+  if(train){ train.target = rate; return; }
+  const sr = c.sampleRate;
+  const node = c.createScriptProcessor(1024, 0, 1);
+  const hp = c.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 35;
+  const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 3200; lp.Q.value = 0.5;
+  const g = c.createGain(); g.gain.setValueAtTime(0, c.currentTime); g.gain.linearRampToValueAtTime(0.9, c.currentTime + 0.02);
+  const st = { target: rate, cur: rate, since: 1e9, node, g };
+  node.onaudioprocess = e => {
+    const out = e.outputBuffer.getChannelData(0);
+    for(let i = 0; i < out.length; i++){
+      st.cur += (st.target - st.cur) * 0.0008;               // smooth glide
+      const period = sr / st.cur;
+      const w = Math.min(sr * 0.0012, period * 0.5);         // pulse width in samples
+      if(st.since >= period){ st.since -= period; if(st.since > period) st.since = 0; }
+      const x = st.since;
+      out[i] = x < w ? 0.5 * (1 - Math.cos(2 * Math.PI * x / w)) * (st.cur > 60 ? 0.55 : 1) : 0;
+      st.since += 1;
+    }
+  };
+  node.connect(hp); hp.connect(lp); lp.connect(g); g.connect(master);
+  train = st;
 }
-function stopTrain(){ if(train){ try{ train.s.stop(); }catch(e){} train = null; } }
+function stopTrain(){
+  if(!train) return; const st = train; train = null;
+  const t = ctx.currentTime; st.g.gain.cancelScheduledValues(t); st.g.gain.setValueAtTime(st.g.gain.value, t); st.g.gain.linearRampToValueAtTime(0, t + 0.04);
+  setTimeout(() => { try { st.node.disconnect(); st.node.onaudioprocess = null; } catch(e){} }, 80);
+}
 
 // ---------- keyboard UI ----------
 let base = 48; // C3, microKEY 25 default
@@ -531,8 +545,8 @@ const L12 = [
         <button class="choice" data-a="0">Slow</button><button class="choice" data-a="1">Fast</button></div>
       <div class="feedback" id="fb"></div>
       ${footer("Continue", false)}`); wireFooter();
-      const play = (r, id) => { startTrain(r); setTimeout(stopTrain, 900); heard.add(id); if(heard.size === 2) $("#q").classList.remove("hidden"); };
-      $("#a").onclick = () => play(110, "a"); $("#b").onclick = () => play(220, "b");
+      let tm; const play = (r, id) => { clearTimeout(tm); stopTrain(); startTrain(r); tm = setTimeout(stopTrain, 1000); heard.add(id); if(heard.size === 2) $("#q").classList.remove("hidden"); };
+      $("#a").onclick = () => play(220, "a"); $("#b").onclick = () => play(440, "b");
       screenEl.querySelectorAll(".choice").forEach(b => b.onclick = () => {
         if(b.dataset.a === "1"){ b.classList.add("right"); $("#fb").className = "feedback good";
           $("#fb").textContent = "Yes. Faster means higher."; enableNext(); }
@@ -543,9 +557,16 @@ const L12 = [
   // concept: frequency
   { render(){
       h(`<h1>That's frequency</h1>
-      <p>Repeats per second, in hertz (Hz).</p>
-      <div class="card"><span class="big" style="color:var(--coral)">220 Hz</span><p class="muted" style="margin:6px 0 0">220 repeats every second</p></div>
+      <p>Repeats per second. We count it in hertz (Hz).</p>
+      <div class="card row" style="gap:14px;justify-content:center">
+        <button class="btn ghost" id="fa">Slow: 220 Hz</button>
+        <button class="btn ghost" id="fb2">Fast: 440 Hz</button>
+      </div>
+      <p class="muted" style="margin-top:12px">The two sounds you just heard.</p>
       ${footer("Continue")}`); wireFooter();
+      let tm; const play = r => { clearTimeout(tm); stopTrain(); startTrain(r); tm = setTimeout(stopTrain, 1000); };
+      $("#fa").onclick = () => play(220); $("#fb2").onclick = () => play(440);
+      this.cleanup = () => { clearTimeout(tm); stopTrain(); };
   }},
   // explore the keyboard
   { keys: true, render(){
@@ -575,7 +596,7 @@ const L12 = [
           else { flash(n, "no"); $("#fb").className = "feedback bad"; $("#fb").textContent = "Not that one. Find the lit key."; }
         } else if(step === 1){
           if(n === A + 12){ flash(n, "ok"); step = 2;
-            $("#hd").textContent = "Same sound, higher"; $("#t").textContent = "Play both. They blend.";
+            $("#hd").textContent = "Same sound, higher"; $("#t").textContent = "Now press both lit keys together. They sound like one.";
             $("#fb").className = "feedback good"; $("#fb").textContent = `${freq(A).toFixed(0)} × 2 = ${freq(A + 12).toFixed(0)} Hz`; setHints([A, A + 12]); enableNext(); }
           else { flash(n, "no"); $("#fb").className = "feedback bad";
             $("#fb").textContent = `${freq(n).toFixed(0)} Hz. ${freq(n) < freq(A) * 2 ? "Go higher." : "Too high."}`; }
