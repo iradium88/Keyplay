@@ -1030,7 +1030,7 @@ const L13 = [
 let res14 = null;
 // two-tone mixer with a soft, organ-like timbre so smooth vs rough is audible
 let pair = null;
-function pairWave(c){ const n = 8, re = new Float32Array(n + 1), im = new Float32Array(n + 1); for(let k = 1; k <= n; k++) im[k] = Math.pow(k, -1.4); return c.createPeriodicWave(re, im); }
+function pairWave(c){ const n = 8, re = new Float32Array(n + 1), im = new Float32Array(n + 1); for(let k = 1; k <= n; k++) im[k] = Math.pow(k, -2.2) * (k > 5 ? 0 : 1); return c.createPeriodicWave(re, im); }
 function pairOn(f1, f2){
   const c = audio();
   if(pair){ pair.o2.frequency.setTargetAtTime(f2, c.currentTime, 0.02); pair.o1.frequency.setTargetAtTime(f1, c.currentTime, 0.02); return; }
@@ -1071,7 +1071,7 @@ const L14 = [
       <div class="feedback" id="fb"></div>
       ${footer("Continue", false)}`); wireFooter();
       screenEl.querySelectorAll(".choice").forEach(b => b.onclick = () => {
-        clearTimeout(tm); pairOff(); const f = +b.dataset.f; pairOn(f, f); tm = setTimeout(pairOff, 900); heard.add(f);
+        const f = +b.dataset.f; playNote(Math.round(69 + 12 * Math.log2(f / 440)), 1.4); heard.add(f);
         if(heard.size === fs.length){ $("#fb").className = "feedback good"; $("#fb").textContent = "Same sound each time, one octave higher."; enableNext(); } });
       this.cleanup = () => { clearTimeout(tm); pairOff(); };
   }},
