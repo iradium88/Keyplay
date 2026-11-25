@@ -1021,12 +1021,171 @@ const L13 = [
         <li>More hertz, higher pitch</li>
         <li>People hear about 20 to 20,000 Hz</li>
       </ul>
-      <div class="footer"><button class="btn coral" id="next">Back to path</button></div>`);
-      $("#next").onclick = showPath;
+      <div class="footer"><button class="btn ghost" id="again">Again</button><button class="btn coral" id="next">Next lesson</button></div>`);
+      $("#again").onclick = () => go(0); $("#next").onclick = () => startLesson("1.4");
   }},
 ];
 
-const LESSONS = { "1.1": L11, "1.2": L12, "1.3": L13 };
+// ===== Lesson 1.4: Octaves and ratios =====
+let res14 = null;
+// two-tone mixer with a soft, organ-like timbre so smooth vs rough is audible
+let pair = null;
+function pairWave(c){ const n = 8, re = new Float32Array(n + 1), im = new Float32Array(n + 1); for(let k = 1; k <= n; k++) im[k] = Math.pow(k, -1.4); return c.createPeriodicWave(re, im); }
+function pairOn(f1, f2){
+  const c = audio();
+  if(pair){ pair.o2.frequency.setTargetAtTime(f2, c.currentTime, 0.02); pair.o1.frequency.setTargetAtTime(f1, c.currentTime, 0.02); return; }
+  const w = pairWave(c), g = c.createGain(); g.gain.setValueAtTime(0, c.currentTime); g.gain.linearRampToValueAtTime(0.12, c.currentTime + 0.05);
+  const o1 = c.createOscillator(), o2 = c.createOscillator(); o1.setPeriodicWave(w); o2.setPeriodicWave(w);
+  o1.frequency.value = f1; o2.frequency.value = f2; o1.connect(g); o2.connect(g); g.connect(master); o1.start(); o2.start();
+  pair = { o1, o2, g };
+}
+function pairOff(){ if(!pair) return; const t = ctx.currentTime, P = pair; pair = null; P.g.gain.cancelScheduledValues(t); P.g.gain.setValueAtTime(P.g.gain.value, t); P.g.gain.linearRampToValueAtTime(0, t + 0.06); P.o1.stop(t + 0.1); P.o2.stop(t + 0.1); }
+function chord(ns, dur = 1.4){ ns.forEach(n => playNote(n, dur)); }
+const L14 = [
+  // intro
+  { render(){
+      res14 = null;
+      h(`<div class="kicker">Stage 1 · Sound</div>
+      <h1>Octaves and ratios</h1>
+      <p>Why some sounds go together.</p>
+      ${footer("Start")}`); wireFooter();
+  }},
+  // recall twins, then name it
+  { keys: true, render(){
+      const a = base + 4, b = a + 12; const hit = new Set();
+      h(`<h1>Remember the twins?</h1>
+      <p>Play both lit keys.</p>
+      <div class="feedback" id="fb"></div>
+      ${footer("Continue", false)}`); wireFooter();
+      setHints([a, b]);
+      this.onNote = n => { if(n === a || n === b){ flash(n, "ok"); hit.add(n); }
+        if(hit.size === 2){ $("#fb").className = "feedback good"; $("#fb").innerHTML = "Twins repeat twice as fast. Musicians call this jump an <b>octave</b>."; enableNext(); } };
+      this.cleanup = () => setHints([]);
+  }},
+  // octave ladder
+  { render(){
+      const fs = [110, 220, 440, 880]; const heard = new Set(); let tm;
+      h(`<h1>An octave is ×2</h1>
+      <p>Tap each one. Every step doubles.</p>
+      <div class="choices">${fs.map((f, i) => `<button class="choice" data-f="${f}">${f} Hz${i ? ` <span class="muted">= ${fs[i - 1]} × 2</span>` : ""}</button>`).join("")}</div>
+      <div class="feedback" id="fb"></div>
+      ${footer("Continue", false)}`); wireFooter();
+      screenEl.querySelectorAll(".choice").forEach(b => b.onclick = () => {
+        clearTimeout(tm); pairOff(); const f = +b.dataset.f; pairOn(f, f); tm = setTimeout(pairOff, 900); heard.add(f);
+        if(heard.size === fs.length){ $("#fb").className = "feedback good"; $("#fb").textContent = "Same sound each time, one octave higher."; enableNext(); } });
+      this.cleanup = () => { clearTimeout(tm); pairOff(); };
+  }},
+  // ratio slider
+  { render(){
+      let playing = false; const found = new Set(); const base = 220;
+      const spots = [[2, "×2, an octave"], [1.5, "×1.5"], [4 / 3, "×1.33"]];
+      h(`<h1>Mix two sounds</h1>
+      <p>Drag slowly. Find the smooth spots.</p>
+      <div class="card">
+        <div class="row" style="justify-content:center;margin-bottom:14px"><button class="btn" id="pp" style="min-width:160px">Play</button></div>
+        <div class="row" style="justify-content:space-between"><span class="big" id="rt">×1.00</span><span class="muted" id="hz">220 + 220 Hz</span></div>
+        <input type="range" id="sl" min="1000" max="2050" value="1000">
+        <p class="muted" id="fd" style="margin:8px 0 0">Smooth spots found: 0 of 3</p>
+      </div>
+      <div class="feedback" id="fb"></div>
+      ${footer("Continue", false)}`); wireFooter();
+      const sl = $("#sl");
+      const upd = () => {
+        let r = +sl.value / 1000; let label = "";
+        for(const [s, l] of spots) if(Math.abs(r - s) < 0.012){ r = s; label = l; }   // gentle snap
+        $("#rt").textContent = "×" + r.toFixed(2); $("#hz").textContent = `220 + ${Math.round(base * r)} Hz`;
+        if(playing) pairOn(base, base * r);
+        if(playing && label && !found.has(label)){ found.add(label); $("#fb").className = "feedback good"; $("#fb").textContent = `Smooth! ${label}.`; }
+        else if(playing && !label){ $("#fb").textContent = ""; }
+        $("#fd").textContent = `Smooth spots found: ${found.size} of 3`;
+        if(found.size >= 2) enableNext();
+      };
+      sl.oninput = upd;
+      $("#pp").onclick = () => { playing = !playing; $("#pp").textContent = playing ? "Stop" : "Play"; if(playing) upd(); else pairOff(); };
+      this.cleanup = pairOff; upd();
+  }},
+  // quiz
+  { render(){
+      h(`<h1>One octave above 300 Hz is…</h1>
+      <div class="choices">
+        <button class="choice" data-a="0">450 Hz</button>
+        <button class="choice" data-a="1">600 Hz</button>
+        <button class="choice" data-a="0">900 Hz</button>
+      </div><div class="feedback" id="fb"></div>
+      ${footer("Continue", false)}`); wireFooter();
+      screenEl.querySelectorAll(".choice").forEach(b => b.onclick = () => {
+        if(b.dataset.a === "1"){ b.classList.add("right"); $("#fb").className = "feedback good"; $("#fb").textContent = "Right. An octave is always ×2."; pairOn(300, 600); setTimeout(pairOff, 1000); enableNext(); }
+        else { b.classList.add("wrong"); $("#fb").className = "feedback bad"; $("#fb").textContent = "Not quite. An octave doubles it."; }
+      });
+      this.cleanup = pairOff;
+  }},
+  // guided pairs on the keys: octave, ×1.5, neighbours
+  { keys: true, render(){
+      const lo = base + 2; const steps = [
+        [lo + 12, "Same sound, higher. Very smooth."],
+        [lo + 7, "Also smooth. These two are about ×1.5."],
+        [lo + 1, "Rough. Close neighbours rub against each other."]];
+      let k = 0, gotLo = false, gotHi = false;
+      h(`<h1 id="hd">Play both lit keys together</h1>
+      <p class="muted" id="st">Pair 1 of 3</p>
+      <div class="feedback" id="fb"></div>
+      ${footer("Continue", false)}`); wireFooter();
+      const show = () => { setHints([lo, steps[k][0]]); gotLo = gotHi = false; $("#st").textContent = `Pair ${k + 1} of 3`; };
+      show();
+      this.onNote = n => {
+        if(k >= steps.length) return;
+        if(n === lo) gotLo = true; if(n === steps[k][0]) gotHi = true;
+        if(gotLo && gotHi){ $("#fb").className = "feedback good"; $("#fb").textContent = steps[k][1]; k++;
+          if(k < steps.length) setTimeout(show, 900); else { setHints([]); $("#st").textContent = "All 3 pairs heard"; enableNext(); } }
+      };
+      this.cleanup = () => setHints([]);
+  }},
+  // practice: smooth or rough
+  { render(){
+      const pool = [[12, 1], [7, 1], [5, 1], [1, 0], [6, 0], [11, 0]];
+      const rounds = [...pool].sort(() => Math.random() - 0.5); let r = 0, right = 0, first = true, cur;
+      h(`<div class="kicker">Practice</div><h1>Smooth or rough?</h1>
+      <p>Listen to two keys together.</p>
+      <div class="card"><div class="row" style="justify-content:space-between"><span class="big" id="rd">1 / ${rounds.length}</span><span class="muted" id="sc">0 right</span></div>
+        <div class="row" style="justify-content:center;margin-top:12px"><button class="btn ghost" id="again">Hear again</button></div></div>
+      <div class="choices" style="grid-template-columns:1fr 1fr;display:grid">
+        <button class="choice" data-c="1">Smooth</button><button class="choice" data-c="0">Rough</button></div>
+      <div class="feedback" id="fb"></div>
+      ${footer("Continue", false)}`); wireFooter();
+      let lo;
+      const hear = () => chord([lo, lo + cur[0]]);
+      const next = () => {
+        if(r >= rounds.length){ res14 = { right, rounds: rounds.length }; $("#fb").className = "feedback good"; $("#fb").textContent = `Done. ${right} of ${rounds.length} right.`; enableNext(); return; }
+        screenEl.querySelectorAll(".choice").forEach(c => c.className = "choice");
+        cur = rounds[r]; lo = base + Math.floor(Math.random() * 10); first = true;
+        $("#rd").textContent = `${r + 1} / ${rounds.length}`; $("#fb").textContent = ""; hear();
+      };
+      $("#again").onclick = hear;
+      screenEl.querySelectorAll(".choice").forEach(c => c.onclick = () => {
+        if(r >= rounds.length) return;
+        if(+c.dataset.c === cur[1]){ c.classList.add("right"); if(first) right++; $("#sc").textContent = `${right} right`;
+          $("#fb").className = "feedback good"; $("#fb").textContent = cur[0] === 12 ? "Yes, an octave." : "Yes."; r++; setTimeout(next, 1100); }
+        else { c.classList.add("wrong"); first = false; $("#fb").className = "feedback bad"; $("#fb").textContent = "Listen again."; }
+      });
+      setTimeout(next, 400);
+  }},
+  // summary
+  { render(){
+      const p = load(); p["1.4"] = { done: true, at: new Date().toISOString(), ...(res14 || {}) }; save(p);
+      const r = res14 || { right: 0, rounds: 6 };
+      h(`<div class="kicker">Lesson complete</div><h1>You found the octave</h1>
+      <div class="card stat"><div><b>${r.right}/${r.rounds}</b>right</div></div>
+      <ul style="font-size:18px;line-height:1.7;margin-top:0">
+        <li>An octave is ×2: same sound, higher</li>
+        <li>Simple mixes like ×1.5 sound smooth</li>
+        <li>Close neighbours sound rough</li>
+      </ul>
+      <div class="footer"><button class="btn ghost" id="again">Again</button><button class="btn coral" id="next">Back to path</button></div>`);
+      $("#again").onclick = () => go(0); $("#next").onclick = showPath;
+  }},
+];
+
+const LESSONS = { "1.1": L11, "1.2": L12, "1.3": L13, "1.4": L14 };
 let screens = L12, lessonId = "1.2";
 
 
