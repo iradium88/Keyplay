@@ -213,6 +213,48 @@ body.labels2 .bk .lbl{display:block;position:absolute;bottom:6px;left:0;right:0;
 .circle5 text{font-weight:700}
 .rhy.hid .rn,.rhy.hid .rr{border:2px dashed var(--line);background:transparent}
 .letters{display:grid!important;grid-template-columns:repeat(4,1fr)}
+/* home + stage map */
+.homehead{text-align:left;margin:8px 0 18px}.homehead h1{margin:0 0 10px}
+.overall{display:flex;align-items:center;gap:12px}.overall .sbar{flex:1}.overall span{color:var(--ink2);font-size:14px;white-space:nowrap}
+.sbar{height:8px;background:var(--soft);border-radius:99px;overflow:hidden;margin:6px 0 4px}.sbar>div{height:100%;background:var(--good);border-radius:99px}
+.stagecard .sinfo{flex:1;min-width:0}.stagecard .sinfo>span{font-size:13px}
+.stagecard .n.full{background:var(--good);color:#fff}
+.contcard{text-align:left;display:flex;flex-direction:column;gap:6px;padding:18px;margin-bottom:22px;cursor:pointer}
+.contcard b{font-size:20px}.contcard .btn{align-self:flex-start;margin-top:8px}
+.stages h2{text-align:left;font-size:18px;margin:6px 0 12px}
+.allst{background:none;border:0;padding:6px 0;font:inherit;font-weight:600;color:var(--ink2);cursor:pointer;display:block;text-align:left}
+.stagehead .overall{margin-top:10px}
+.stnavrow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:26px 0 10px}
+.stnav{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:12px 14px;font:inherit;color:var(--ink);cursor:pointer;text-align:left}
+.stnav.r{align-items:flex-end;text-align:right}.stnav span{color:var(--ink2);font-size:13px}.stnav b{font-size:15px}
+
+/* three kinds of buttons: sound (tinted pill + speaker), action (dark pill + play), answer (white card) */
+body.v-lesson :is(button[data-li],#hear,#again,#pp,#pb),body.v-lesson :is(#go,#tap,#dl,#rec,#str,#ls){display:inline-flex;align-items:center;justify-content:center;gap:10px;border-radius:99px;font-weight:700;min-width:0}
+body.v-lesson :is(button[data-li],#hear,#again,#pp,#pb){background:color-mix(in srgb,var(--coral) 13%,var(--card));color:var(--ink);border:2px solid color-mix(in srgb,var(--coral) 45%,var(--card));box-shadow:0 4px 0 color-mix(in srgb,var(--coral) 45%,var(--card))}
+body.v-lesson :is(button[data-li],#hear,#again,#pp,#pb)::before,body.v-lesson :is(#go,#tap,#dl,#rec,#str,#ls)::before{content:"";width:20px;height:20px;flex:none;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 9h4l5-4v14l-5-4H4z'/%3E%3Cpath d='M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 9h4l5-4v14l-5-4H4z'/%3E%3Cpath d='M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat}
+body.v-lesson :is(button[data-li],#hear,#again,#pp,#pb)::before{background:var(--coral)}
+body.v-lesson :is(#go,#tap,#dl,#rec,#str,#ls)::before{width:16px;height:16px;-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 4.5v15l13-7.5z'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 4.5v15l13-7.5z'/%3E%3C/svg%3E")}
+body.v-lesson button[data-li]{margin:0 auto;width:100%;max-width:360px}
+body.v-lesson button[data-li].heard:not(#z){background:color-mix(in srgb,var(--good) 12%,var(--card));border-color:var(--good);box-shadow:0 4px 0 var(--good)}
+body.v-lesson button[data-li].heard:not(#z)::before{background:var(--good)}
+body.v-lesson :is(#pb,#dl):disabled::before{background:#A9A9B8}
+/* Continue: pops when it unlocks */
+@keyframes readypop{0%{transform:scale(1)}35%{transform:scale(1.07);box-shadow:0 4px 0 #000,0 0 0 8px color-mix(in srgb,var(--good) 30%,transparent)}100%{transform:scale(1)}}
+#next.ready{background:var(--good);box-shadow:0 4px 0 #157A4C;animation:readypop .6s ease-out 2}
+/* feedback */
+.fbbtn{background:none;border:0;padding:4px;margin-left:-6px;color:#A9A9B8;cursor:pointer;position:relative;display:flex}
+.fbbtn[data-r="good"]{color:var(--good)}.fbbtn[data-r="bad"]{color:var(--bad)}.fbbtn[data-r="note"]{color:var(--coral)}
+.fbsheet{position:fixed;inset:0;background:rgba(10,10,20,.35);display:flex;align-items:flex-end;justify-content:center;z-index:50}
+.fbcard{background:var(--card);width:100%;max-width:520px;border-radius:20px 20px 0 0;padding:16px 16px 22px;display:flex;flex-direction:column;gap:12px;text-align:left}
+.fbtop{display:flex;justify-content:space-between;align-items:center}
+.fbrate{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fbrate button{font:600 16px inherit;font-family:inherit;padding:12px;border-radius:14px;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.fbrate button.on[data-r="good"]{border-color:var(--good);background:color-mix(in srgb,var(--good) 12%,var(--card))}
+.fbrate button.on[data-r="bad"]{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,var(--card))}
+.fbcard textarea{font:16px inherit;font-family:inherit;padding:12px;border-radius:14px;border:2px solid var(--line);background:var(--paper);color:var(--ink);resize:vertical}
+.fbcard .btn{width:100%;min-width:0}
+.fbhome{display:flex;flex-direction:column;gap:4px;margin:-8px 0 22px}.fbhome span{color:var(--ink2);font-size:14px}
+.fbhome .row{display:flex;justify-content:flex-start;gap:8px;margin-top:8px}.fbhome .btn{min-width:0;padding:10px 16px;font-size:15px}
 </style>
 </head>
 <body>
@@ -551,7 +593,7 @@ function wireFooter(){
   $("#back").onclick = () => idx === 0 ? showPath() : go(idx - 1);
   clearTimeout(idleT); if(n.classList.contains("locked")) armIdle(1500);
 }
-const enableNext = () => { const b = $("#next"); if(!b) return; b.classList.remove("locked"); b.removeAttribute("aria-disabled"); const hm = $("#hintmsg"); if(hm) hm.classList.remove("show"); clearTimeout(idleT); clearNudge(); };
+const enableNext = () => { const b = $("#next"); if(!b) return; if(b.classList.contains("locked")) b.classList.add("ready"); b.classList.remove("locked"); b.removeAttribute("aria-disabled"); const hm = $("#hintmsg"); if(hm) hm.classList.remove("show"); clearTimeout(idleT); clearNudge(); };
 
 const L12 = [
   // intro
@@ -973,7 +1015,7 @@ let res13 = null;
 let tone = null;
 function toneOn(f, vol = 0.18){
   const c = audio();
-  if(tone){ tone.o.frequency.setTargetAtTime(f, c.currentTime, 0.03); return; }
+  if(tone){ glide(tone.o.frequency, f); return; }
   const o = c.createOscillator(); o.type = "sine"; o.frequency.value = f;
   const g = c.createGain(); g.gain.setValueAtTime(0, c.currentTime); g.gain.linearRampToValueAtTime(vol, c.currentTime + 0.05);
   o.connect(g); g.connect(master); o.start(); tone = { o, g };
@@ -1128,7 +1170,7 @@ let pair = null;
 function pairWave(c){ const n = 8, re = new Float32Array(n + 1), im = new Float32Array(n + 1); for(let k = 1; k <= n; k++) im[k] = Math.pow(k, -2.2) * (k > 5 ? 0 : 1); return c.createPeriodicWave(re, im); }
 function pairOn(f1, f2){
   const c = audio();
-  if(pair){ pair.o2.frequency.setTargetAtTime(f2, c.currentTime, 0.02); pair.o1.frequency.setTargetAtTime(f1, c.currentTime, 0.02); return; }
+  if(pair){ glide(pair.o2.frequency, f2); glide(pair.o1.frequency, f1); return; }
   const w = pairWave(c), g = c.createGain(); g.gain.setValueAtTime(0, c.currentTime); g.gain.linearRampToValueAtTime(0.12, c.currentTime + 0.05);
   const o1 = c.createOscillator(), o2 = c.createOscillator(); o1.setPeriodicWave(w); o2.setPeriodicWave(w);
   o1.frequency.value = f1; o2.frequency.value = f2; o1.connect(g); o2.connect(g); g.connect(master); o1.start(); o2.start();
@@ -1297,9 +1339,11 @@ function waveOf(c, kind){
   }
   return c.createPeriodicWave(re, im);
 }
+// smooth pitch change without zipper chirps
+function glide(F, f){ const t = ctx.currentTime; if(Math.abs(F.value - f) < 0.01) return; F.cancelScheduledValues(t); F.setValueAtTime(F.value, t); F.setTargetAtTime(f, t, 0.05); }
 function tOn(key, f, kind = "soft", vol = 0.12){
   const c = audio(), t = c.currentTime;
-  if(tones.has(key)){ const T = tones.get(key); T.o.frequency.setTargetAtTime(f, t, 0.02); return T; }
+  if(tones.has(key)){ const T = tones.get(key), F = T.o.frequency; if(Math.abs(F.value - f) < 0.01) return T; F.cancelScheduledValues(t); F.setValueAtTime(F.value, t); F.setTargetAtTime(f, t, 0.06); return T; }
   const o = c.createOscillator(); o.setPeriodicWave(waveOf(c, kind)); o.frequency.value = f;
   const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 5000;
   const g = c.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.04);
@@ -1363,7 +1407,7 @@ const L15 = [
   { render(){ res15 = null;
       h(`<div class="kicker">Stage 1 · Sound</div><h1>Beating and roughness</h1><p>What happens when two sounds almost match.</p>${footer("Start")}`); wireFooter(); }},
   { render(){
-      h(`<h1>Listen to both</h1><p>Tap each one.</p>
+      h(`<h1>Listen to both</h1><p>Tap each to hear it.</p>
       <div class="choices">
         <button class="choice" data-li="0">Two matching sounds</button>
         <button class="choice" data-li="1">Two almost matching sounds</button>
@@ -1373,7 +1417,7 @@ const L15 = [
       this.cleanup = () => { clearTimeout(tm); tAllOff(); };
   }},
   { render(){
-      h(`<h1>Count the wobbles</h1><p>Tap each one.</p>
+      h(`<h1>Count the wobbles</h1><p>Tap each to hear it.</p>
       <div class="choices">
         <button class="choice" data-li="0">220 + 221 Hz <span class="muted">→ 1 a second</span></button>
         <button class="choice" data-li="1">220 + 223 Hz <span class="muted">→ 3 a second</span></button>
@@ -1384,7 +1428,7 @@ const L15 = [
       this.cleanup = () => { clearTimeout(tm); tAllOff(); };
   }},
   { render(){
-      let playing = false, maxD = 0;
+      let playing = false, maxD = 0, raf = 0;
       h(`<h1>Widen the gap</h1><p>Tap Play, then drag the slider right.</p>
       <div class="card">
         <div class="row" style="justify-content:center;margin-bottom:14px"><button class="btn" id="pp" style="min-width:160px">Play</button></div>
@@ -1394,7 +1438,7 @@ const L15 = [
       const sl = $("#sl");
       const upd = () => { const d = +sl.value; $("#dv").textContent = d + " Hz";
         $("#lab").textContent = d < 0.5 ? "matched" : d < 8 ? "wobbling" : d < 35 ? "rough" : "two sounds";
-        if(playing){ tOn("a", 220, "pure", 0.1); tOn("b", 220 + d, "pure", 0.1); maxD = Math.max(maxD, d); }
+        if(playing){ cancelAnimationFrame(raf); raf = requestAnimationFrame(() => { tOn("a", 220, "pure", 0.08); tOn("b", 220 + d, "pure", 0.08); }); maxD = Math.max(maxD, d); }
         if(maxD >= 40){ $("#fb").className = "feedback good"; $("#fb").textContent = "Wobble → rough → two separate sounds."; enableNext(); } };
       sl.oninput = upd;
       $("#pp").onclick = () => { playing = !playing; $("#pp").textContent = playing ? "Stop" : "Play"; if(playing) upd(); else tAllOff(); };
@@ -1511,7 +1555,7 @@ const L17 = [
   { render(){ res17 = null;
       h(`<div class="kicker">Stage 1 · Sound</div><h1>Timbre and harmonics</h1><p>Why a piano doesn't sound like a flute.</p>${footer("Start")}`); wireFooter(); }},
   { render(){
-      h(`<h1>Same pitch, three sounds</h1><p>Tap each one.</p>
+      h(`<h1>Same pitch, three sounds</h1><p>Tap each to hear it.</p>
       <div class="choices">
         <button class="choice" data-li="0">Piano</button>
         <button class="choice" data-li="1">Smooth</button>
@@ -1755,7 +1799,7 @@ window.addEventListener("popstate", e => {
   const st = e.state; if(!st) return; navFromPop = true;
   try {
     if(st.v === "lesson"){ if(lessonId !== st.id || !document.body.classList.contains("v-lesson")){ lessonId = st.id; screens = LESSONS[st.id]; document.body.className = "v-lesson"; } go(st.i); }
-    else if(st.v === "path") showPath(); else showWelcome();
+    else if(st.v === "path") showPath(st.s); else if(st.v === "home") showHome(); else showWelcome();
   } finally { navFromPop = false; }
 });
 
@@ -2159,23 +2203,42 @@ const COURSE = [
 ];
 
 window.keyplayTest = { press: (n, v) => press(n, v === undefined ? 0.7 : v), release: n => release(n) };
-// ---- map: one stage at a time, stage picker below ----
+// ---- home (welcome back) + one stage at a time ----
 let mapStage = 1;
+const stageIds = i => COURSE[i].lessons.map(l => l[0]);
+const stageDone = (p, i) => stageIds(i).filter(id => p[id]?.done).length;
+const pbar = (dn, n) => `<div class="sbar"><div style="width:${n ? Math.round(dn / n * 100) : 0}%"></div></div>`;
+function nextUp(p){ for(const c of COURSE) for(const [id, t] of c.lessons) if(READY.has(id) && !p[id]?.done) return [id, t]; return null; }
+function showHome(){
+  view("home"); const p = load();
+  const all = COURSE.flatMap(c => c.lessons.map(l => l[0])), dnAll = all.filter(id => p[id]?.done).length;
+  const nx = nextUp(p), started = dnAll > 0;
+  const cont = nx ? `<div class="card contcard" id="cont"><div class="kicker">${started ? "Up next" : "Start here"} · Stage ${parseInt(nx[0])}</div><b>${nx[0]} ${nx[1]}</b><button class="btn coral">${started ? "Continue" : "Start"}</button></div>` : `<div class="card contcard"><b>Course complete!</b></div>`;
+  const cards = COURSE.map((c, i) => { const n = c.lessons.length, dn = stageDone(p, i);
+    return `<div class="card stagecard open" data-st="${i + 1}"><span class="n ${dn === n ? "full" : ""}">${i + 1}</span><span class="sinfo"><b>${c.title}</b>${pbar(dn, n)}<span>${dn} of ${n}</span></span><span class="lock">›</span></div>`; }).join("");
+  h(`<div class="homehead"><h1>${started ? "Welcome back" : "Welcome"}</h1><div class="overall">${pbar(dnAll, all.length)}<span>${dnAll} of ${all.length} lessons</span></div></div>
+    ${cont}<div class="stages"><h2>Stages</h2>${cards}</div>`);
+  if(nx) $("#cont").onclick = () => startLesson(nx[0]);
+  screenEl.querySelectorAll(".stagecard[data-st]").forEach(n => n.onclick = () => showPath(+n.dataset.st));
+  pushNav({ v: "home" });
+}
 showPath = function(stage){
   if(typeof stage === "number") mapStage = stage;
   view("path"); const p = load(); p.stage = mapStage; save(p);
-  const st = COURSE[mapStage - 1];
+  const i = mapStage - 1, st = COURSE[i], n = st.lessons.length, dn = stageDone(p, i);
   const firstOpen = st.lessons.find(([id]) => READY.has(id) && !p[id]?.done)?.[0];
   const nodes = st.lessons.map(([id, t]) => {
     const done = !!p[id]?.done, ready = READY.has(id);
     const go = id === firstOpen ? `<span class="go"><button class="btn coral">Start</button></span>` : "";
     return `<li class="node ${done ? "done" : ready ? "open" : ""}" data-id="${ready ? id : ""}"><span class="dotn">${id}</span><span><span class="t">${t}</span>${done ? `<br><span class="s">Done</span>` : ready ? "" : `<br><span class="s">Soon</span>`}</span>${go}</li>`; }).join("");
-  const others = COURSE.map((c, i) => { if(i + 1 === mapStage) return ""; const ids = c.lessons.map(l => l[0]); const ready = ids.some(id => READY.has(id)); const dn = ids.filter(id => p[id]?.done).length;
-    return `<div class="card stagecard ${ready ? "open" : ""}" data-st="${ready ? i + 1 : ""}"><span class="n">${i + 1}</span><span><b>${c.title}</b><span>${dn ? `${dn} of ${ids.length} done` : `${ids.length} lessons`}</span></span><span class="lock">${ready ? "›" : LOCK}</span></div>`; }).join("");
-  h(`<div class="stagehead"><div class="kicker">Stage ${mapStage}</div><h1>${st.title}</h1></div>
-    <ul class="path">${nodes}</ul><div class="stages"><h2>All stages</h2>${others}</div>`);
+  const prev = i > 0 ? `<button class="card stnav" data-st="${i}"><span>‹ Stage ${i}</span><b>${COURSE[i - 1].title}</b></button>` : `<span></span>`;
+  const next = i < COURSE.length - 1 ? `<button class="card stnav r" data-st="${i + 2}"><span>Stage ${i + 2} ›</span><b>${COURSE[i + 1].title}</b></button>` : `<span></span>`;
+  h(`<button class="allst" id="allst">‹ All stages</button>
+    <div class="stagehead"><div class="kicker">Stage ${mapStage}</div><h1>${st.title}</h1><div class="overall">${pbar(dn, n)}<span>${dn} of ${n} done</span></div></div>
+    <ul class="path">${nodes}</ul><div class="stnavrow">${prev}${next}</div>`);
+  $("#allst").onclick = showHome;
   screenEl.querySelectorAll(".node[data-id]").forEach(n => { if(n.dataset.id) n.onclick = () => startLesson(n.dataset.id); });
-  screenEl.querySelectorAll(".stagecard[data-st]").forEach(n => { if(n.dataset.st) n.onclick = () => showPath(+n.dataset.st); });
+  screenEl.querySelectorAll(".stnav[data-st]").forEach(n => n.onclick = () => showPath(+n.dataset.st));
   pushNav({ v: "path", s: mapStage });
 };
 const nextLessonId = id => { const all = COURSE.flatMap(c => c.lessons.map(l => l[0])); const i = all.indexOf(id); return all[i + 1] && READY.has(all[i + 1]) ? all[i + 1] : null; };
@@ -2205,6 +2268,44 @@ S.nameNote = o => ({ render(){ const N = o.rounds || 8; let r = 0, right = 0, fi
 } });
 // play the note shown on the staff (scored)
 S.readPlay = o => S.find({ ...o, staff: true, fit: o.fit, make: () => { const n = rnd(o.pool); return { prompt: "", staff: { clef: o.clef || "treble", notes: [{ n, d: "w" }], width: 220 }, ok: x => x === n, show: [n], bad: x => `That's ${nm(x)}. Try again.` }; } });
+
+// ===================== review feedback on every screen =====================
+const FBKEY = "keyplay.feedback.v1";
+const fbLoad = () => { try { return JSON.parse(localStorage.getItem(FBKEY)) || {}; } catch(e){ return {}; } };
+const fbSave = d => { try { localStorage.setItem(FBKEY, JSON.stringify(d)); } catch(e){} };
+const $d = q => document.querySelector(q);
+const fbId = () => `${lessonId}.${idx + 1}`;
+{ const b = document.createElement("button"); b.id = "fbbtn"; b.className = "fbbtn"; b.setAttribute("aria-label", "Feedback on this screen");
+  b.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg>';
+  document.querySelector(".lessonbar").appendChild(b); b.onclick = fbOpen; }
+function fbMark(){ const f = fbLoad()[fbId()]; const b = $d("#fbbtn"); if(b) b.dataset.r = f ? f.r || "note" : ""; }
+const _go = go; go = function(i){ _go(i); fbMark(); $d("#fbsheet")?.remove(); };
+function fbOpen(){
+  if($d("#fbsheet")) return $d("#fbsheet").remove();
+  const id = fbId(), all = fbLoad(), f = all[id] || {}; let r = f.r || "";
+  const el = document.createElement("div"); el.id = "fbsheet"; el.className = "fbsheet";
+  el.innerHTML = `<div class="fbcard"><div class="fbtop"><b>Screen ${id}</b><button class="x" id="fbx">✕</button></div>
+    <div class="fbrate"><button data-r="good">👍 Good</button><button data-r="bad">👎 Bad</button></div>
+    <textarea id="fbt" rows="3" placeholder="What should change? (optional)">${(f.t || "").replace(/</g, "&lt;")}</textarea>
+    <button class="btn coral" id="fbs">Save</button></div>`;
+  document.body.appendChild(el);
+  const mark = () => el.querySelectorAll("[data-r]").forEach(x => x.classList.toggle("on", x.dataset.r === r));
+  el.querySelectorAll("[data-r]").forEach(x => x.onclick = () => { r = r === x.dataset.r ? "" : x.dataset.r; mark(); }); mark();
+  el.onclick = e => { if(e.target === el) el.remove(); };
+  $d("#fbx").onclick = () => el.remove();
+  $d("#fbs").onclick = () => { const d = fbLoad(), t = $d("#fbt").value.trim(); if(r || t) d[id] = { r, t, at: new Date().toISOString() }; else delete d[id]; fbSave(d); el.remove(); fbMark(); };
+}
+const fbSort = (a, b) => a.split(".").map(Number).reduce((s, x, i) => s || x - b.split(".").map(Number)[i], 0);
+function fbText(){ const d = fbLoad(); return Object.keys(d).sort(fbSort).map(k => `${k} ${d[k].r === "good" ? "👍" : d[k].r === "bad" ? "👎" : "•"} ${d[k].t || ""}`.trim()).join("\n"); }
+const _home = showHome; showHome = function(){
+  _home(); const n = Object.keys(fbLoad()).length; if(!n) return;
+  const c = document.createElement("div"); c.className = "card fbhome";
+  c.innerHTML = `<b>Your feedback</b><span>${n} screen${n > 1 ? "s" : ""}</span><div class="row"><button class="btn" id="fbsend">Send</button><button class="btn ghost" id="fbcopy">Copy</button><button class="btn ghost" id="fbclear">Clear</button></div>`;
+  screenEl.querySelector(".contcard")?.after(c);
+  $("#fbcopy").onclick = async () => { try { await navigator.clipboard.writeText(fbText()); $("#fbcopy").textContent = "Copied"; } catch(e){ prompt("Copy this:", fbText()); } };
+  $("#fbsend").onclick = () => { const body = "Feedback from the app\n\n" + fbText(); window.open("https://github.com/iradium88/Keyplay/issues/new?title=" + encodeURIComponent("Screen feedback " + new Date().toISOString().slice(0, 10)) + "&labels=feedback&body=" + encodeURIComponent(body.slice(0, 6000)), "_blank"); };
+  $("#fbclear").onclick = () => { if(confirm("Clear all feedback?")){ fbSave({}); showHome(); } };
+};
 
 // ===================== Stage 2: Foundations =====================
 const C4 = 60, CPOS = [60, 62, 64, 65, 67], LPOS = [48, 50, 52, 53, 55];
@@ -3132,7 +3233,7 @@ function showWelcome(){
     <p class="tag">Learn piano by playing</p>
     <button class="btn coral" id="go">Get started</button>
     <p class="credit">Piano sound: Salamander Grand by Alexander Holm, <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a></p></div>`);
-  $("#go").onclick = () => { const p = load(); p.welcomed = true; save(p); showPath(); };
+  $("#go").onclick = () => { const p = load(); p.welcomed = true; save(p); showHome(); };
   pushNav({ v: "welcome" });
 }
 function showPath(){
@@ -3156,10 +3257,10 @@ function showPath(){
 }
 function startLesson(id = "1.1"){ lessonId = id; screens = LESSONS[id]; document.body.className = "v-lesson"; go(0); }
 document.getElementById("close").onclick = showPath;
-document.getElementById("home").onclick = () => load().welcomed ? showPath() : showWelcome();
+document.getElementById("home").onclick = () => load().welcomed ? showHome() : showWelcome();
 document.addEventListener("pointerdown", () => audio(), { once: true });
 buildKeyboard();
-if(location.hash.startsWith("#lesson")) startLesson(location.hash.slice(8) || "1.1"); else if(location.hash === "#welcome") showWelcome(); else if(load().welcomed) showPath(); else showWelcome();
+if(location.hash.startsWith("#lesson")) startLesson(location.hash.slice(8) || "1.1"); else if(location.hash === "#welcome") showWelcome(); else if(load().welcomed) showHome(); else showWelcome();
 </script>
 </body>
 </html>
