@@ -161,6 +161,28 @@ body.v-lesson .kbwrap{position:static;flex:none}
 .midi{display:none!important}
 #prev{font-size:16px;font-weight:600;color:var(--ink2);white-space:nowrap}
 .footer{flex-direction:row!important}
+
+/* guidance: pulse what to tap next, explain a locked Continue */
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,106,61,.55)}70%{box-shadow:0 0 0 14px rgba(255,106,61,0)}100%{box-shadow:0 0 0 0 rgba(255,106,61,0)}}
+.nudge{animation:pulse 1.3s ease-out infinite;border-radius:16px;position:relative;z-index:1}
+input[type=range].nudge{border-radius:99px}
+.wk.hint,.bk.hint{animation:keyglow 1.4s ease-in-out infinite}
+@keyframes keyglow{50%{filter:brightness(.9)}}
+.wk.hint{box-shadow:inset 0 -18px 0 var(--coral)!important}
+.nudgekeys{animation:pulse 1.3s ease-out 1}
+.btn.locked{background:var(--soft);color:#A9A9B8;box-shadow:0 4px 0 var(--line)}
+.btn.locked:active{transform:none}
+@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+.shake{animation:shake .35s}
+.footer{position:relative}
+.hintmsg{position:absolute;left:0;right:0;bottom:100%;font-size:16px;font-weight:600;color:var(--coral);text-align:center;opacity:0;transition:opacity .2s;pointer-events:none;background:var(--paper);padding:6px 0}
+.hintmsg.show{opacity:1}
+.choice.heard{border-color:var(--good);box-shadow:0 4px 0 var(--good)}
+.choice.heard:after{content:" ✓";color:var(--good)}
+.linkbtn{appearance:none;background:none;border:0;padding:2px 4px;font:inherit;font-weight:600;color:var(--ink);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.bars{display:flex;justify-content:space-between;gap:6px;margin-top:10px}
+.bars label{display:flex;flex-direction:column;align-items:center;flex:1;font-size:14px;color:var(--ink2);font-weight:600}
+.bars input.vbar{writing-mode:vertical-lr;direction:rtl;width:28px;height:110px;margin:0 0 4px}
 </style>
 </head>
 <body>
@@ -450,13 +472,52 @@ let current = null, idx = 0;
 function h(html){ screenEl.innerHTML = html; return screenEl; }
 const $ = s => screenEl.querySelector(s);
 function footer(label = "Continue", enabled = true){
-  return `<div class="footer"><button class="btn ghost" id="back">Back</button><button class="btn coral" id="next" ${enabled ? "" : "disabled"}>${label}</button></div>`;
+  return `<div class="footer"><div class="hintmsg" id="hintmsg"></div><button class="btn ghost" id="back">Back</button><button class="btn coral${enabled ? "" : " locked"}" id="next" ${enabled ? "" : 'aria-disabled="true"'}>${label}</button></div>`;
 }
+// ---- "what do I do here?" guidance: pulse the next thing to tap; explain a locked Continue ----
+let idleT = null;
+function nudgeTarget(){
+  const S = screenEl, keys = document.body.classList.contains("keys");
+  const pp = S.querySelector("#pp");
+  if(pp && /^Play/.test(pp.textContent)) return [pp, "Tap Play first."];
+  const li = S.querySelector("[data-li]:not(.heard)");
+  if(li) return [li, "Tap each one to hear it."];
+  const rng = S.querySelector("input[type=range]");
+  if(rng) return [rng.closest(".bars") || rng, rng.classList.contains("vbar") ? "Drag a few bars up." : "Drag the slider."];
+  const btn = [...S.querySelectorAll("#go, #ls, #tap, #str")].find(b => !b.disabled);
+  if(btn) return [btn, btn.id === "str" ? "Tap the string." : (btn.id === "tap" ? "Tap the button 4 times." : `Tap ${btn.textContent.trim()}.`)];
+  if(keys) return hints.size ? [null, "Play the lit key below."] : [kbEl, "Play any key below."];
+  const ch = S.querySelector(".choices:not(.hidden) .choice:not(.right):not(.wrong), #ch .choice");
+  if(ch) return [ch.parentElement, "Pick an answer."];
+  return [null, "Finish the task above."];
+}
+function clearNudge(){ document.querySelectorAll(".nudge").forEach(e => e.classList.remove("nudge")); }
+function nudge(){
+  const n = $("#next"); if(!n || !n.classList.contains("locked")) return;
+  const [el] = nudgeTarget(); clearNudge(); if(el) el.classList.add("nudge");
+}
+function armIdle(ms = 4000){ clearTimeout(idleT); idleT = setTimeout(nudge, ms); }
+screenEl.addEventListener("pointerdown", () => { clearNudge(); armIdle(); }, true);
+screenEl.addEventListener("click", e => { const b = e.target.closest("[data-li]"); if(b) b.classList.add("heard"); }, true);
+kbEl.addEventListener("pointerdown", () => { clearNudge(); armIdle(); }, true);
+screenEl.addEventListener("input", () => { clearNudge(); armIdle(); }, true);
 function wireFooter(){
-  $("#next").onclick = () => go(idx + 1);
+  const n = $("#next");
+  n.onclick = () => {
+    if(n.classList.contains("locked")){
+      const [el, msg] = nudgeTarget(); const hm = $("#hintmsg");
+      hm.textContent = msg; hm.classList.add("show");
+      n.classList.remove("shake"); void n.offsetWidth; n.classList.add("shake");
+      setTimeout(() => { clearNudge(); if(el) el.classList.add("nudge"); }, 10);
+      if(!el && document.body.classList.contains("keys")){ kbEl.classList.add("nudgekeys"); setTimeout(() => kbEl.classList.remove("nudgekeys"), 1400); }
+      return;
+    }
+    go(idx + 1);
+  };
   $("#back").onclick = () => idx === 0 ? showPath() : go(idx - 1);
+  clearTimeout(idleT); if(n.classList.contains("locked")) armIdle(1500);
 }
-const enableNext = () => { const b = $("#next"); if(b) b.disabled = false; };
+const enableNext = () => { const b = $("#next"); if(!b) return; b.classList.remove("locked"); b.removeAttribute("aria-disabled"); const hm = $("#hintmsg"); if(hm) hm.classList.remove("show"); clearTimeout(idleT); clearNudge(); };
 
 const L12 = [
   // intro
@@ -480,7 +541,7 @@ const L12 = [
   { render(){
       let maxRate = 1;
       h(`<h1>Speed it up</h1>
-      <p>Press play, then drag right.</p>
+      <p>Tap Play, then drag right.</p>
       <div class="card">
         <div class="row" style="justify-content:center;margin-bottom:14px"><button class="btn" id="pp" style="min-width:160px">Play</button></div>
         <div class="row" style="justify-content:space-between"><span class="big" id="rate">2</span><span class="muted">clicks / second</span></div>
@@ -536,10 +597,10 @@ const L12 = [
   { render(){
       let heard = new Set();
       h(`<h1>Which is higher?</h1>
-      <p>Play both.</p>
+      <p>Tap both.</p>
       <div class="card row">
-        <button class="btn" id="a">Slow</button>
-        <button class="btn" id="b">Fast</button>
+        <button class="btn" id="a" data-li="0">Slow</button>
+        <button class="btn" id="b" data-li="1">Fast</button>
       </div>
       <div class="choices hidden" id="q">
         <button class="choice" data-a="0">Slow</button><button class="choice" data-a="1">Fast</button></div>
@@ -748,7 +809,7 @@ const L11 = [
   { render(){
       let playing = false, raf, t0 = performance.now(), heard = 0;
       h(`<h1>It pushes the air</h1>
-      <p>Press play. Watch the dots.</p>
+      <p>Tap Play. Watch the dots.</p>
       <canvas id="air" width="700" height="200"></canvas>
       <div class="row" style="margin-top:14px"><button class="btn" id="pp">Play</button></div>
       <div class="feedback" id="fb"></div>
@@ -798,8 +859,8 @@ const L11 = [
       h(`<h1>High and low</h1>
       <p>Tap both.</p>
       <div class="card row" style="gap:14px;justify-content:center">
-        <button class="btn" id="lo">Low sound</button>
-        <button class="btn" id="hi">High sound</button>
+        <button class="btn" id="lo" data-li="0">Low sound</button>
+        <button class="btn" id="hi" data-li="1">High sound</button>
       </div>
       <div class="feedback" id="fb"></div>
       ${footer("Continue", false)}`); wireFooter();
@@ -901,7 +962,7 @@ const L13 = [
   { render(){
       let playing = false, lo = 1e9, hi = 0;
       h(`<h1>Slide the sound</h1>
-      <p>Press play, then drag.</p>
+      <p>Tap Play, then drag.</p>
       <div class="card">
         <div class="row" style="justify-content:center;margin-bottom:14px"><button class="btn" id="pp" style="min-width:160px">Play</button></div>
         <div class="row" style="justify-content:space-between"><span class="big" id="hz">200</span><span class="muted">Hz</span></div>
@@ -936,7 +997,7 @@ const L13 = [
   { render(){
       let raf, t0 = 0, f = 200, on = false;
       h(`<h1>How low can you hear?</h1>
-      <p>Press start. Tap stop when the sound is gone.</p>
+      <p>Tap Start. Tap Stop when it's gone.</p>
       <div class="card" style="text-align:center"><span class="big" id="hz">200 Hz</span></div>
       <div class="row" style="margin-top:14px"><button class="btn" id="go" style="min-width:160px">Start</button></div>
       <div class="feedback" id="fb"></div>
@@ -1067,7 +1128,7 @@ const L14 = [
       const fs = [110, 220, 440, 880]; const heard = new Set(); let tm;
       h(`<h1>An octave is ×2</h1>
       <p>Tap each one. Every step doubles.</p>
-      <div class="choices">${fs.map((f, i) => `<button class="choice" data-f="${f}">${f} Hz${i ? ` <span class="muted">= ${fs[i - 1]} × 2</span>` : ""}</button>`).join("")}</div>
+      <div class="choices">${fs.map((f, i) => `<button class="choice" data-li="${i}" data-f="${f}">${f} Hz${i ? ` <span class="muted">= ${fs[i - 1]} × 2</span>` : ""}</button>`).join("")}</div>
       <div class="feedback" id="fb"></div>
       ${footer("Continue", false)}`); wireFooter();
       screenEl.querySelectorAll(".choice").forEach(b => b.onclick = () => {
@@ -1080,7 +1141,7 @@ const L14 = [
       let playing = false; const found = new Set(); const base = 220;
       const spots = [[2, "×2, an octave"], [1.5, "×1.5"], [4 / 3, "×1.33"]];
       h(`<h1>Mix two sounds</h1>
-      <p>Drag slowly. Find the smooth spots.</p>
+      <p>Tap Play. Drag slowly to find smooth spots.</p>
       <div class="card">
         <div class="row" style="justify-content:center;margin-bottom:14px"><button class="btn" id="pp" style="min-width:160px">Play</button></div>
         <div class="row" style="justify-content:space-between"><span class="big" id="rt">×1.00</span><span class="muted" id="hz">220 + 220 Hz</span></div>
@@ -1183,12 +1244,458 @@ const L14 = [
         <li>Simple mixes like ×1.5 sound smooth</li>
         <li>Close neighbours sound rough</li>
       </ul>
-      <div class="footer"><button class="btn ghost" id="again">Again</button><button class="btn coral" id="next">Back to path</button></div>`);
-      $("#again").onclick = () => go(0); $("#next").onclick = showPath;
+      <div class="footer"><button class="btn ghost" id="again">Again</button><button class="btn coral" id="next">Next lesson</button></div>`);
+      $("#again").onclick = () => go(0); $("#next").onclick = () => startLesson("1.5");
   }},
 ];
 
-const LESSONS = { "1.1": L11, "1.2": L12, "1.3": L13, "1.4": L14 };
+// ===== shared helpers for 1.5–1.9 =====
+// named steady tones with a chosen timbre, so several can sound at once
+const tones = new Map();
+function waveOf(c, kind){
+  const n = 16, re = new Float32Array(n + 1), im = new Float32Array(n + 1);
+  for(let k = 1; k <= n; k++){
+    if(kind === "soft") im[k] = k <= 5 ? Math.pow(k, -2.2) : 0;
+    else if(kind === "bright") im[k] = 1 / k;                          // saw-like
+    else if(kind === "hollow") im[k] = k % 2 ? 1 / k : 0;              // square-like
+    else if(Array.isArray(kind)) im[k] = kind[k - 1] || 0;             // custom harmonic mix
+    else im[k] = k === 1 ? 1 : 0;                                      // pure
+  }
+  return c.createPeriodicWave(re, im);
+}
+function tOn(key, f, kind = "soft", vol = 0.12){
+  const c = audio(), t = c.currentTime;
+  if(tones.has(key)){ const T = tones.get(key); T.o.frequency.setTargetAtTime(f, t, 0.02); return T; }
+  const o = c.createOscillator(); o.setPeriodicWave(waveOf(c, kind)); o.frequency.value = f;
+  const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 5000;
+  const g = c.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.04);
+  o.connect(lp); lp.connect(g); g.connect(master); o.start();
+  const T = { o, g }; tones.set(key, T); return T;
+}
+function tVol(key, vol){ const T = tones.get(key); if(T) T.g.gain.setTargetAtTime(vol, ctx.currentTime, 0.03); }
+function tWave(key, kind){ const T = tones.get(key); if(T) T.o.setPeriodicWave(waveOf(ctx, kind)); }
+function tOff(key){ const T = tones.get(key); if(!T) return; tones.delete(key); const t = ctx.currentTime;
+  T.g.gain.cancelScheduledValues(t); T.g.gain.setValueAtTime(T.g.gain.value, t); T.g.gain.linearRampToValueAtTime(0, t + 0.06); T.o.stop(t + 0.1); }
+function tAllOff(){ [...tones.keys()].forEach(tOff); }
+function blip(fs, dur = 1.2, kind = "soft", vol = 0.12){ tAllOff(); fs.forEach((f, i) => tOn("b" + i, f, kind, vol)); return setTimeout(tAllOff, dur * 1000); }
+// a row of "listen" buttons; calls done() once every button was tapped
+function listenRow(items, done){
+  const heard = new Set();
+  screenEl.querySelectorAll("[data-li]").forEach(b => b.onclick = () => {
+    const i = +b.dataset.li; items[i](); heard.add(i); b.classList.add("heard");
+    if(heard.size === items.length) done();
+  });
+}
+function lessonSummary(id, title, stat, bullets, nextId){
+  const p = load(); p[id] = { done: true, at: new Date().toISOString(), ...(stat || {}) }; save(p);
+  h(`<div class="kicker">Lesson complete</div><h1>${title}</h1>
+    ${stat ? `<div class="card stat"><div><b>${stat.right}/${stat.rounds}</b>right</div></div>` : ""}
+    <ul style="font-size:18px;line-height:1.7;margin-top:0">${bullets.map(b => `<li>${b}</li>`).join("")}</ul>
+    <div class="footer"><button class="btn ghost" id="again">Again</button><button class="btn coral" id="next">${nextId ? "Next lesson" : "Back to path"}</button></div>`);
+  $("#again").onclick = () => go(0); $("#next").onclick = () => nextId ? startLesson(nextId) : showPath();
+}
+// generic listening drill: rounds = [{play(), answer}] ; labels = choice labels
+function drill(cfg){
+  const { rounds, labels, onDone, refs } = cfg; let r = 0, right = 0, first = true;
+  h(`<div class="kicker">Practice</div><h1>${cfg.title}</h1>
+    <p>${cfg.line}</p>
+    <div class="card"><div class="row" style="justify-content:space-between"><span class="big" id="rd">1 / ${rounds.length}</span><span class="muted" id="sc">0 right</span></div>
+      <div class="row" style="justify-content:center;margin-top:12px"><button class="btn ghost" id="again">Hear again</button></div></div>
+    <div class="choices" style="display:grid;grid-template-columns:repeat(${labels.length},1fr)">${labels.map((l, i) => `<button class="choice" data-c="${i}">${l}</button>`).join("")}</div>
+    ${refs ? `<p class="muted" style="margin-top:10px;font-size:15px">Compare: ${refs.map((x, i) => `<button class="linkbtn" data-ref="${i}">${x[0]}</button>`).join(" · ")}</p>` : ""}
+    <div class="feedback" id="fb"></div>
+    ${footer("Continue", false)}`); wireFooter();
+  const cur = () => rounds[r];
+  const next = () => {
+    if(r >= rounds.length){ onDone({ right, rounds: rounds.length }); $("#fb").className = "feedback good"; $("#fb").textContent = `Done. ${right} of ${rounds.length} right.`; enableNext(); return; }
+    screenEl.querySelectorAll(".choice").forEach(c => c.className = "choice");
+    first = true; $("#rd").textContent = `${r + 1} / ${rounds.length}`; $("#fb").textContent = ""; cur().play();
+  };
+  $("#again").onclick = () => r < rounds.length && cur().play();
+  if(refs) screenEl.querySelectorAll("[data-ref]").forEach(b => b.onclick = () => refs[+b.dataset.ref][1]());
+  screenEl.querySelectorAll(".choice").forEach(c => c.onclick = () => {
+    if(r >= rounds.length) return;
+    if(+c.dataset.c === cur().answer){ c.classList.add("right"); if(first) right++; $("#sc").textContent = `${right} right`;
+      $("#fb").className = "feedback good"; $("#fb").textContent = "Yes."; r++; setTimeout(next, 1300); }
+    else { c.classList.add("wrong"); first = false; $("#fb").className = "feedback bad"; $("#fb").textContent = "Not quite. Hear it again."; }
+  });
+  setTimeout(next, 500);
+}
+const shuffle = a => a.map(x => [Math.random(), x]).sort((p, q) => p[0] - q[0]).map(x => x[1]);
+
+// ===== Lesson 1.5: Beating and roughness =====
+let res15 = null;
+const L15 = [
+  { render(){ res15 = null;
+      h(`<div class="kicker">Stage 1 · Sound</div><h1>Beating and roughness</h1><p>What happens when two sounds almost match.</p>${footer("Start")}`); wireFooter(); }},
+  { render(){
+      h(`<h1>Listen to both</h1><p>Tap each one.</p>
+      <div class="choices">
+        <button class="choice" data-li="0">Two matching sounds</button>
+        <button class="choice" data-li="1">Two almost matching sounds</button>
+      </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      let tm; listenRow([() => { clearTimeout(tm); tm = blip([220, 220], 2.5, "pure", 0.1); }, () => { clearTimeout(tm); tm = blip([220, 222], 2.5, "pure", 0.1); }],
+        () => { $("#fb").className = "feedback good"; $("#fb").textContent = "Hear the second one wobble? That's called beating."; enableNext(); });
+      this.cleanup = () => { clearTimeout(tm); tAllOff(); };
+  }},
+  { render(){
+      h(`<h1>Count the wobbles</h1><p>Tap each one.</p>
+      <div class="choices">
+        <button class="choice" data-li="0">220 + 221 Hz <span class="muted">→ 1 a second</span></button>
+        <button class="choice" data-li="1">220 + 223 Hz <span class="muted">→ 3 a second</span></button>
+        <button class="choice" data-li="2">220 + 226 Hz <span class="muted">→ 6 a second</span></button>
+      </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      let tm; listenRow([1, 3, 6].map(d => () => { clearTimeout(tm); tm = blip([220, 220 + d], 3, "pure", 0.1); }),
+        () => { $("#fb").className = "feedback good"; $("#fb").textContent = "Bigger gap, faster wobble."; enableNext(); });
+      this.cleanup = () => { clearTimeout(tm); tAllOff(); };
+  }},
+  { render(){
+      let playing = false, maxD = 0;
+      h(`<h1>Widen the gap</h1><p>Tap Play, then drag the slider right.</p>
+      <div class="card">
+        <div class="row" style="justify-content:center;margin-bottom:14px"><button class="btn" id="pp" style="min-width:160px">Play</button></div>
+        <div class="row" style="justify-content:space-between"><span class="big" id="dv">0 Hz</span><span class="muted" id="lab">apart</span></div>
+        <input type="range" id="sl" min="0" max="60" value="0" step="0.5">
+      </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      const sl = $("#sl");
+      const upd = () => { const d = +sl.value; $("#dv").textContent = d + " Hz";
+        $("#lab").textContent = d < 0.5 ? "matched" : d < 8 ? "wobbling" : d < 35 ? "rough" : "two sounds";
+        if(playing){ tOn("a", 220, "pure", 0.1); tOn("b", 220 + d, "pure", 0.1); maxD = Math.max(maxD, d); }
+        if(maxD >= 40){ $("#fb").className = "feedback good"; $("#fb").textContent = "Wobble → rough → two separate sounds."; enableNext(); } };
+      sl.oninput = upd;
+      $("#pp").onclick = () => { playing = !playing; $("#pp").textContent = playing ? "Stop" : "Play"; if(playing) upd(); else tAllOff(); };
+      this.cleanup = tAllOff;
+  }},
+  { render(){
+      h(`<h1>220 Hz and 225 Hz wobble…</h1>
+      <div class="choices">
+        <button class="choice" data-a="1">5 times a second</button>
+        <button class="choice" data-a="0">225 times a second</button>
+        <button class="choice" data-a="0">They don't wobble</button>
+      </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      screenEl.querySelectorAll(".choice").forEach(b => b.onclick = () => {
+        if(b.dataset.a === "1"){ b.classList.add("right"); $("#fb").className = "feedback good"; $("#fb").textContent = "Right. 225 − 220 = 5."; blip([220, 225], 2.5, "pure", 0.1); enableNext(); }
+        else { b.classList.add("wrong"); $("#fb").className = "feedback bad"; $("#fb").textContent = "Not quite. Subtract one from the other."; }
+      });
+      this.cleanup = tAllOff;
+  }},
+  { render(){
+      const off = (Math.random() < 0.5 ? -1 : 1) * (5 + Math.random() * 3); let playing = false, done = false;
+      h(`<h1>Tune it by ear</h1><p>Tap Play. Drag until the wobble stops.</p>
+      <div class="card">
+        <div class="row" style="justify-content:center;margin-bottom:14px"><button class="btn" id="pp" style="min-width:160px">Play</button></div>
+        <input type="range" id="sl" min="-100" max="100" value="${Math.round(off * 10)}">
+        <div class="row" style="justify-content:space-between"><span class="muted">lower</span><span class="muted">higher</span></div>
+      </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      const sl = $("#sl");
+      const upd = () => { const d = +sl.value / 10; if(playing){ tOn("a", 220, "soft", 0.1); tOn("b", 220 + d, "soft", 0.1); }
+        if(playing && Math.abs(d) <= 0.4 && !done){ done = true; $("#fb").className = "feedback good"; $("#fb").textContent = "In tune! That's how musicians tune their strings."; enableNext(); } };
+      sl.oninput = upd;
+      $("#pp").onclick = () => { playing = !playing; $("#pp").textContent = playing ? "Stop" : "Play"; if(playing) upd(); else tAllOff(); };
+      this.cleanup = tAllOff;
+  }},
+  { render(){
+      const pairs = shuffle([[0, 1], [3, 1], [0, 1], [5, 1], [0.0, 1], [2, 1]]).map(([d]) => d);
+      drill({ title: "Wobble or still?", line: "Listen to two sounds together.", labels: ["Still", "Wobbling"],
+        rounds: pairs.map(d => ({ play: () => blip([247, 247 + d], 2.5, "soft", 0.1), answer: d > 0 ? 1 : 0 })),
+        onDone: s => res15 = s });
+      this.cleanup = tAllOff;
+  }},
+  { render(){ lessonSummary("1.5", "You can hear beating", res15, ["Two close sounds wobble", "Wobbles per second = the difference in Hz", "When the wobble stops, they're in tune"], "1.6"); }},
+];
+
+// ===== Lesson 1.6: Loudness =====
+let res16 = null;
+const L16 = [
+  { render(){ res16 = null;
+      h(`<div class="kicker">Stage 1 · Sound</div><h1>Loudness</h1><p>Bigger vibrations, louder sounds.</p>${footer("Start")}`); wireFooter(); }},
+  { render(){
+      let playing = false, moved = 0, raf;
+      h(`<h1>Make it louder</h1><p>Tap Play, then drag the slider.</p>
+      <div class="card">
+        <div class="row" style="justify-content:center;margin-bottom:14px"><button class="btn" id="pp" style="min-width:160px">Play</button></div>
+        <canvas id="cv" width="700" height="140" style="background:none"></canvas>
+        <input type="range" id="sl" min="5" max="100" value="25">
+        <div class="row" style="justify-content:space-between"><span class="muted">soft</span><span class="muted">loud</span></div>
+      </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      const sl = $("#sl"), cv = $("#cv"), g = cv.getContext("2d"); let last = +sl.value;
+      const draw = () => { const W = cv.width, H = cv.height, a = +sl.value / 100 * (H / 2 - 6), t = performance.now() / 1000;
+        g.clearRect(0, 0, W, H); g.strokeStyle = getComputedStyle(document.body).getPropertyValue("--coral"); g.lineWidth = 4; g.beginPath();
+        for(let x = 0; x <= W; x += 3){ const y = H / 2 - a * Math.sin(x / W * 6 * Math.PI - (playing ? t * 6 : 0)); x ? g.lineTo(x, y) : g.moveTo(x, y); }
+        g.stroke(); raf = requestAnimationFrame(draw); };
+      draw();
+      sl.oninput = () => { const v = +sl.value; moved += Math.abs(v - last); last = v; if(playing) tVol("a", Math.pow(v / 100, 2) * 0.35);
+        if(playing && moved > 60){ $("#fb").className = "feedback good"; $("#fb").textContent = "Taller wave, louder sound. The pitch stays the same."; enableNext(); } };
+      $("#pp").onclick = () => { playing = !playing; $("#pp").textContent = playing ? "Stop" : "Play"; if(playing) tOn("a", 330, "soft", Math.pow(+sl.value / 100, 2) * 0.35); else tAllOff(); };
+      this.cleanup = () => { cancelAnimationFrame(raf); tAllOff(); };
+  }},
+  { render(){
+      h(`<h1>Which wave is louder?</h1>
+      <div class="choices">
+        <button class="choice" data-a="0">${waveSvg(4, 8)}</button>
+        <button class="choice" data-a="1">${waveSvg(4, 30)}</button>
+      </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      screenEl.querySelectorAll(".choice").forEach(b => b.onclick = () => {
+        if(b.dataset.a === "1"){ b.classList.add("right"); $("#fb").className = "feedback good"; $("#fb").textContent = "Yes. Same width, same pitch. Taller means louder."; enableNext(); }
+        else { b.classList.add("wrong"); $("#fb").className = "feedback bad"; $("#fb").textContent = "That one is quieter. Look at the height."; }
+      });
+  }},
+  { render(){
+      h(`<h1>Steps of loudness</h1><p>Tap each one, top to bottom.</p>
+      <div class="choices">
+        <button class="choice" data-li="0">Quiet</button>
+        <button class="choice" data-li="1">One step up</button>
+        <button class="choice" data-li="2">Two steps up</button>
+      </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      let tm; listenRow([0.03, 0.095, 0.3].map(v => () => { clearTimeout(tm); tm = blip([330], 1, "soft", v); }),
+        () => { $("#fb").className = "feedback good"; $("#fb").textContent = "Each step is +10 decibels (dB). It sounds about twice as loud."; enableNext(); });
+      this.cleanup = () => { clearTimeout(tm); tAllOff(); };
+  }},
+  { keys: true, render(){
+      const levels = [0.2, 0.55, 1]; const k = base + 7;
+      h(`<h1>Same key, three forces</h1><p>Tap Play and watch the key.</p>
+      <div class="row" style="justify-content:center"><button class="btn" id="go" style="min-width:160px">Play</button></div>
+      <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      const tms = [];
+      $("#go").onclick = () => { levels.forEach((v, j) => tms.push(setTimeout(() => { keyEls.get(k)?.classList.add("down"); noteOnSound(k, v); tms.push(setTimeout(() => { noteOffSound(k); keyEls.get(k)?.classList.remove("down"); }, 700)); }, j * 1000)));
+        tms.push(setTimeout(() => { $("#fb").className = "feedback good"; $("#fb").textContent = "Soft, medium, loud. Same pitch."; enableNext(); }, 2800)); };
+      this.cleanup = () => { tms.forEach(clearTimeout); keyEls.get(k)?.classList.remove("down"); };
+  }},
+  { render(){
+      const lv = [0.15, 0.5, 1]; const n = base + 7;
+      const hit = v => { noteOnSound(n, v); setTimeout(() => noteOffSound(n), 900); };
+      drill({ title: "Soft, medium or loud?", line: "Listen to one key.", labels: ["Soft", "Medium", "Loud"],
+        refs: [["soft", () => hit(lv[0])], ["medium", () => hit(lv[1])], ["loud", () => hit(lv[2])]],
+        rounds: shuffle([0, 1, 2, 0, 1, 2]).map(a => ({ play: () => hit(lv[a]), answer: a })), onDone: s => res16 = s });
+  }},
+  { render(){ lessonSummary("1.6", "You can hear loudness", res16, ["Bigger vibration, taller wave, louder sound", "Loudness doesn't change pitch", "Loudness is counted in decibels (dB)"], "1.7"); }},
+];
+
+// ===== Lesson 1.7: Timbre and harmonics =====
+let res17 = null;
+const L17 = [
+  { render(){ res17 = null;
+      h(`<div class="kicker">Stage 1 · Sound</div><h1>Timbre and harmonics</h1><p>Why a piano doesn't sound like a flute.</p>${footer("Start")}`); wireFooter(); }},
+  { render(){
+      h(`<h1>Same pitch, three sounds</h1><p>Tap each one.</p>
+      <div class="choices">
+        <button class="choice" data-li="0">Piano</button>
+        <button class="choice" data-li="1">Smooth</button>
+        <button class="choice" data-li="2">Bright</button>
+      </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      let tm; listenRow([() => { tAllOff(); playNote(57, 1.2); }, () => { clearTimeout(tm); tm = blip([220], 1.2, "pure", 0.16); }, () => { clearTimeout(tm); tm = blip([220], 1.2, "bright", 0.07); }],
+        () => { $("#fb").className = "feedback good"; $("#fb").textContent = "Same pitch, different colour. That colour is called timbre."; enableNext(); });
+      this.cleanup = () => { clearTimeout(tm); tAllOff(); };
+  }},
+  { render(){
+      h(`<h1>One note hides more</h1><p>Tap the low note, then each hidden part.</p>
+      <div class="choices">
+        <button class="choice" data-li="0">Low note: 110 Hz</button>
+        <button class="choice" data-li="1">Hidden ×2: 220 Hz</button>
+        <button class="choice" data-li="2">Hidden ×3: 330 Hz</button>
+        <button class="choice" data-li="3">Hidden ×4: 440 Hz</button>
+      </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      let tm; listenRow([() => { tAllOff(); playNote(45, 2); }, ...[220, 330, 440].map(f => () => { clearTimeout(tm); tm = blip([f], 1.2, "pure", 0.12); })],
+        () => { $("#fb").className = "feedback good"; $("#fb").textContent = "These hidden parts are called harmonics. Every real note has them."; enableNext(); });
+      this.cleanup = () => { clearTimeout(tm); tAllOff(); };
+  }},
+  { render(){
+      const mix = [1, 0, 0, 0, 0, 0]; let playing = false, moved = new Set(), raf;
+      h(`<h1>Build a sound</h1><p>Tap Play, then raise a few bars.</p>
+      <div class="card">
+        <div class="row" style="justify-content:center;margin-bottom:14px"><button class="btn" id="pp" style="min-width:160px">Play</button></div>
+        <canvas id="cv" width="700" height="120" style="background:none"></canvas>
+        <div class="bars">${mix.map((v, i) => `<label><input type="range" class="vbar" data-i="${i}" min="0" max="100" value="${v * 100}" orient="vertical"><span>×${i + 1}</span></label>`).join("")}</div>
+      </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      const cv = $("#cv"), g = cv.getContext("2d");
+      const draw = () => { const W = cv.width, H = cv.height; g.clearRect(0, 0, W, H);
+        const tot = mix.reduce((a, b) => a + b, 0) || 1;
+        g.strokeStyle = getComputedStyle(document.body).getPropertyValue("--coral"); g.lineWidth = 4; g.beginPath();
+        for(let x = 0; x <= W; x += 2){ let y = 0; mix.forEach((a, k) => y += a * Math.sin((k + 1) * x / W * 4 * Math.PI)); y = H / 2 - y / tot * (H / 2 - 6); x ? g.lineTo(x, y) : g.moveTo(x, y); }
+        g.stroke(); raf = requestAnimationFrame(draw); };
+      draw();
+      screenEl.querySelectorAll(".vbar").forEach(s => s.oninput = () => { mix[+s.dataset.i] = +s.value / 100; if(+s.dataset.i > 0 && +s.value > 20) moved.add(s.dataset.i);
+        if(playing) tWave("a", mix);
+        if(moved.size >= 2){ $("#fb").className = "feedback good"; $("#fb").textContent = "More harmonics, brighter sound. Same pitch."; enableNext(); } });
+      $("#pp").onclick = () => { playing = !playing; $("#pp").textContent = playing ? "Stop" : "Play"; if(playing){ tOn("a", 165, mix, 0.12); } else tAllOff(); };
+      this.cleanup = () => { cancelAnimationFrame(raf); tAllOff(); };
+  }},
+  { render(){
+      h(`<h1>Piano and flute, same pitch. Why do they sound different?</h1>
+      <div class="choices">
+        <button class="choice" data-a="1">A different mix of harmonics</button>
+        <button class="choice" data-a="0">A different frequency</button>
+        <button class="choice" data-a="0">One is louder</button>
+      </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      screenEl.querySelectorAll(".choice").forEach(b => b.onclick = () => {
+        if(b.dataset.a === "1"){ b.classList.add("right"); $("#fb").className = "feedback good"; $("#fb").textContent = "Right. Same pitch, different harmonics: that's timbre."; enableNext(); }
+        else { b.classList.add("wrong"); $("#fb").className = "feedback bad"; $("#fb").textContent = "Not quite. Same pitch means same frequency."; }
+      });
+  }},
+  { render(){
+      const kinds = ["pure", "bright", "hollow"];
+      const p = k => blip([196], 1.4, kinds[k], k === 0 ? 0.16 : 0.07);
+      drill({ title: "Which sound is it?", line: "Listen, then pick.", labels: ["Smooth", "Bright", "Hollow"],
+        refs: [["smooth", () => p(0)], ["bright", () => p(1)], ["hollow", () => p(2)]],
+        rounds: shuffle([0, 1, 2, 0, 1, 2]).map(a => ({ play: () => p(a), answer: a })), onDone: s => res17 = s });
+      this.cleanup = tAllOff;
+  }},
+  { render(){ lessonSummary("1.7", "You can hear timbre", res17, ["Every note hides harmonics: ×2, ×3, ×4…", "The mix of harmonics is the timbre", "Timbre is why instruments sound different"], "1.8"); }},
+];
+
+// ===== Lesson 1.8: Why 12 notes =====
+let res18 = null;
+const L18 = [
+  { render(){ res18 = null;
+      h(`<div class="kicker">Stage 1 · Sound</div><h1>Why 12 notes</h1><p>The keyboard pattern has a reason.</p>${footer("Start")}`); wireFooter(); }},
+  { keys: true, render(){
+      const start = base; let k = 0;
+      h(`<h1>Count to the twin</h1><p>Play each lit key, white and black.</p>
+      <div class="card" style="text-align:center"><span class="big" id="ct">0</span><p class="muted" style="margin:4px 0 0">steps</p></div>
+      <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      setHints([start]);
+      this.onNote = n => {
+        if(k > 12) return;
+        if(n === start + k){ flash(n, "ok"); $("#ct").textContent = k; k++;
+          if(k <= 12) setHints([start + k]); else { setHints([start, start + 12]); $("#fb").className = "feedback good"; $("#fb").textContent = "12 steps to the twin. Then the pattern repeats."; enableNext(); } }
+        else { flash(n, "no"); }
+      };
+      this.cleanup = () => setHints([]);
+  }},
+  { render(){
+      h(`<h1>12 equal steps</h1><p>Each key is about ×1.06. Twelve make ×2.</p>
+      <div class="card" style="text-align:center"><span class="big">220 → 440 Hz</span><p class="muted" style="margin:6px 0 0">220 × 1.06 × 1.06 … (12 times) ≈ 440</p></div>
+      <div class="row" style="justify-content:center;margin-top:14px"><button class="btn" id="go" style="min-width:160px">Hear the 12 steps</button></div>
+      <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      $("#go").onclick = () => { for(let i = 0; i <= 12; i++) setTimeout(() => playNote(57 + i, 0.4), i * 260);
+        setTimeout(() => { $("#fb").className = "feedback good"; $("#fb").textContent = "Every step the same size. You land on the twin."; enableNext(); }, 13 * 260); };
+  }},
+  { render(){
+      let i = 0, f = 130.81, tm;
+      h(`<h1>Stack ×1.5</h1><p>Each step: ×1.5. Too high? Drop an octave.</p>
+      <div class="card" style="text-align:center"><span class="big" id="st">0 / 12</span><p class="muted" id="fx" style="margin:6px 0 0">Start: 131 Hz</p></div>
+      <div class="row" style="justify-content:center;margin-top:14px"><button class="btn" id="go" style="min-width:160px">Next step</button></div>
+      <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      $("#go").onclick = () => {
+        if(i >= 12) return; i++; f *= 1.5; while(f > 261.62) f /= 2;    // fold back into one octave
+        clearTimeout(tm); tm = blip([f], 0.7, "soft", 0.14);
+        $("#st").textContent = `${i} / 12`; $("#fx").textContent = `${Math.round(f)} Hz`;
+        if(i === 12){ $("#go").disabled = true; $("#fb").className = "feedback good"; $("#fb").textContent = "12 steps of ×1.5 land almost exactly home (133 vs 131 Hz). That's why there are 12 notes."; enableNext(); }
+      };
+      this.cleanup = () => { clearTimeout(tm); tAllOff(); };
+  }},
+  { render(){
+      h(`<h1>A tiny bend</h1><p>Tap both. Can you hear a difference?</p>
+      <div class="choices">
+        <button class="choice" data-li="0">Pure ×1.5</button>
+        <button class="choice" data-li="1">Piano's ×1.498</button>
+      </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      let tm; listenRow([() => { clearTimeout(tm); tm = blip([220, 330], 2.5, "soft", 0.1); }, () => { clearTimeout(tm); tm = blip([220, 220 * Math.pow(2, 7 / 12)], 2.5, "soft", 0.1); }],
+        () => { $("#fb").className = "feedback good"; $("#fb").textContent = "Almost the same. Pianos bend ×1.5 a tiny bit so all 12 steps are equal."; enableNext(); });
+      this.cleanup = () => { clearTimeout(tm); tAllOff(); };
+  }},
+  { render(){
+      h(`<h1>How many different keys before the pattern repeats?</h1>
+      <div class="choices">
+        <button class="choice" data-a="0">7</button>
+        <button class="choice" data-a="1">12</button>
+        <button class="choice" data-a="0">88</button>
+      </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      screenEl.querySelectorAll(".choice").forEach(b => b.onclick = () => {
+        if(b.dataset.a === "1"){ b.classList.add("right"); $("#fb").className = "feedback good"; $("#fb").textContent = "Right. 12 keys, then the twin starts it again."; enableNext(); }
+        else { b.classList.add("wrong"); $("#fb").className = "feedback bad"; $("#fb").textContent = "Count white and black keys up to the twin."; }
+      });
+  }},
+  { keys: true, render(){
+      const rounds = 3; let r = 0, k = 0, start, t0, times = [];
+      h(`<div class="kicker">Practice</div><h1>Climb to the twin</h1><p>Play every key from the lit one up to its twin.</p>
+      <div class="card"><div class="row" style="justify-content:space-between"><span class="big" id="rd">1 / ${rounds}</span><span class="muted" id="ct">0 of 12</span></div></div>
+      <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      const next = () => { if(r >= rounds){ setHints([]); const avg = (times.reduce((a, b) => a + b, 0) / times.length / 1000).toFixed(1);
+          res18 = { right: rounds, rounds }; $("#fb").className = "feedback good"; $("#fb").textContent = `Done. ${avg} s per climb.`; enableNext(); return; }
+        start = base + Math.floor(Math.random() * 12); k = 0; setHints([start]); $("#rd").textContent = `${r + 1} / ${rounds}`; $("#ct").textContent = "0 of 12"; t0 = 0; };
+      this.onNote = n => { if(r >= rounds) return;
+        if(n === start + k){ flash(n, "ok"); if(k === 0) t0 = performance.now(); k++; $("#ct").textContent = `${k - 1} of 12`;
+          if(k <= 12) setHints([start + k]); else { times.push(performance.now() - t0); r++; $("#fb").className = "feedback good"; $("#fb").textContent = "Twin reached!"; setTimeout(next, 800); } }
+        else flash(n, "no"); };
+      next(); this.cleanup = () => setHints([]);
+  }},
+  { render(){ lessonSummary("1.8", "You know why there are 12", null, ["12 keys, then the twin: the pattern repeats", "Each step is about ×1.06", "Twelve ×1.5 steps land almost home"], "1.9"); }},
+];
+
+// ===== Lesson 1.9: How we hear =====
+let res19 = null;
+const L19 = [
+  { render(){ res19 = null;
+      h(`<div class="kicker">Stage 1 · Sound</div><h1>How we hear</h1><p>Your brain does some of the work.</p>${footer("Start")}`); wireFooter(); }},
+  { render(){
+      h(`<h1>Two jumps</h1><p>Tap both. Compare the jumps.</p>
+      <div class="choices">
+        <button class="choice" data-li="0">110 → 220 Hz <span class="muted">(+110)</span></button>
+        <button class="choice" data-li="1">440 → 880 Hz <span class="muted">(+440)</span></button>
+      </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      const jump = (a, b) => { tAllOff(); playNote(a, 0.6); setTimeout(() => playNote(b, 0.9), 650); };
+      listenRow([() => jump(45, 57), () => jump(69, 81)],
+        () => { $("#fb").className = "feedback good"; $("#fb").textContent = "Same size! Both are ×2. Ears hear ×, not +."; enableNext(); });
+  }},
+  { render(){
+      h(`<h1>Which jump feels bigger?</h1>
+      <div class="choices">
+        <button class="choice" data-a="1">100 → 200 Hz</button>
+        <button class="choice" data-a="0">1000 → 1100 Hz</button>
+      </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      screenEl.querySelectorAll(".choice").forEach(b => b.onclick = () => {
+        if(b.dataset.a === "1"){ b.classList.add("right"); $("#fb").className = "feedback good"; $("#fb").textContent = "Right. ×2 is a whole octave. ×1.1 is a small step."; enableNext(); }
+        else { b.classList.add("wrong"); $("#fb").className = "feedback bad"; $("#fb").textContent = "Think ×, not +. Which one doubles?"; }
+      });
+  }},
+  { render(){
+      const full = [200, 400, 600, 800], missing = [400, 600, 800];
+      const play = fs => { tAllOff(); fs.forEach((f, i) => tOn("m" + i, f, "pure", 0.08)); return setTimeout(tAllOff, 1600); };
+      let tm;
+      h(`<h1>The missing note</h1><p>Tap both. Did the pitch change?</p>
+      <div class="choices">
+        <button class="choice" data-li="0">200 + 400 + 600 + 800 Hz</button>
+        <button class="choice" data-li="1">Same, without the 200</button>
+      </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      listenRow([() => { clearTimeout(tm); tm = play(full); }, () => { clearTimeout(tm); tm = play(missing); }],
+        () => { $("#fb").className = "feedback good"; $("#fb").textContent = "Most people hear the same pitch. Your brain fills in the missing 200 Hz."; enableNext(); });
+      this.cleanup = () => { clearTimeout(tm); tAllOff(); };
+  }},
+  { render(){
+      // Stage 1 check: a mixed listening set
+      const items = shuffle([
+        { q: "Which was higher?", labels: ["First", "Second"], make: () => { const lo = base + 3 + Math.floor(Math.random() * 8), up = Math.random() < 0.5; return { play: () => { playNote(up ? lo : lo + 5, 0.6); setTimeout(() => playNote(up ? lo + 5 : lo, 0.6), 700); }, answer: up ? 1 : 0 }; } },
+        { q: "Smooth or rough?", labels: ["Smooth", "Rough"], make: () => { const s = Math.random() < 0.5, lo = base + 2; return { play: () => chord([lo, lo + (s ? 12 : 1)], 3), answer: s ? 0 : 1 }; } },
+        { q: "Still or wobbling?", labels: ["Still", "Wobbling"], make: () => { const w = Math.random() < 0.5; return { play: () => blip([247, w ? 250 : 247], 2.5, "soft", 0.1), answer: w ? 1 : 0 }; } },
+        { q: "Soft or loud?", labels: ["Soft", "Loud"], make: () => { const l = Math.random() < 0.5, n = base + 7; return { play: () => { noteOnSound(n, l ? 1 : 0.15); setTimeout(() => noteOffSound(n), 900); }, answer: l ? 1 : 0 }; } },
+        { q: "Twins or not?", labels: ["Twins", "Not twins"], make: () => { const t = Math.random() < 0.5, lo = base + 4; return { play: () => { playNote(lo, 0.6); setTimeout(() => playNote(lo + (t ? 12 : 10), 0.8), 700); }, answer: t ? 0 : 1 }; } },
+        { q: "Smooth or bright?", labels: ["Smooth", "Bright"], make: () => { const b = Math.random() < 0.5; return { play: () => blip([196], 1.4, b ? "bright" : "pure", b ? 0.07 : 0.16), answer: b ? 1 : 0 }; } },
+      ]);
+      let r = 0, right = 0, first = true, cur;
+      h(`<div class="kicker">Stage check</div><h1 id="q">…</h1><p>Listen, then pick.</p>
+      <div class="card"><div class="row" style="justify-content:space-between"><span class="big" id="rd">1 / ${items.length}</span><span class="muted" id="sc">0 right</span></div>
+        <div class="row" style="justify-content:center;margin-top:12px"><button class="btn ghost" id="again">Hear again</button></div></div>
+      <div class="choices" id="ch" style="display:grid;grid-template-columns:1fr 1fr"></div>
+      <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      const next = () => {
+        if(r >= items.length){ res19 = { right, rounds: items.length }; $("#fb").className = "feedback good"; $("#fb").textContent = `Done. ${right} of ${items.length} right.`; enableNext(); return; }
+        const it = items[r]; cur = it.make(); first = true;
+        $("#q").textContent = it.q; $("#rd").textContent = `${r + 1} / ${items.length}`; $("#fb").textContent = "";
+        $("#ch").innerHTML = it.labels.map((l, i) => `<button class="choice" data-c="${i}">${l}</button>`).join("");
+        screenEl.querySelectorAll("#ch .choice").forEach(c => c.onclick = () => {
+          if(+c.dataset.c === cur.answer){ c.classList.add("right"); if(first) right++; $("#sc").textContent = `${right} right`; $("#fb").className = "feedback good"; $("#fb").textContent = "Yes."; r++; setTimeout(next, 1300); }
+          else { c.classList.add("wrong"); first = false; $("#fb").className = "feedback bad"; $("#fb").textContent = "Not quite. Hear it again."; }
+        });
+        cur.play();
+      };
+      $("#again").onclick = () => r < items.length && cur.play();
+      setTimeout(next, 500); this.cleanup = tAllOff;
+  }},
+  { render(){ lessonSummary("1.9", "Stage 1 complete!", res19, ["Ears hear jumps by ×, not +", "Your brain can fill in a missing note", "You can hear pitch, beating, loudness and timbre"], null); }},
+];
+
+const LESSONS = { "1.1": L11, "1.2": L12, "1.3": L13, "1.4": L14, "1.5": L15, "1.6": L16, "1.7": L17, "1.8": L18, "1.9": L19 };
 let screens = L12, lessonId = "1.2";
 
 
