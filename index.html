@@ -255,6 +255,22 @@ body.v-lesson :is(#pb,#dl):disabled::before{background:#A9A9B8}
 .fbcard .btn{width:100%;min-width:0}
 .fbhome{display:flex;flex-direction:column;gap:4px;margin:-8px 0 22px}.fbhome span{color:var(--ink2);font-size:14px}
 .fbhome .row{display:flex;justify-content:flex-start;gap:8px;margin-top:8px}.fbhome .btn{min-width:0;padding:10px 16px;font-size:15px}
+/* stage 1 visuals */
+.choice.tim{display:flex;align-items:center;gap:14px;text-align:left}.choice.tim svg{flex:none}
+.ladder{display:flex;flex-direction:column-reverse;gap:3px;max-width:320px;margin:0 auto}
+.rung{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:8px;padding:3px 12px;border-radius:10px;background:var(--soft);font-size:14px;transition:background .2s}
+.rung span{color:var(--ink2);font-weight:600}.rung i{font-style:normal;color:var(--ink2);font-size:12px}
+.rung.on{background:color-mix(in srgb,var(--coral) 22%,var(--card))}
+.octbar{position:relative;height:56px;margin:8px 10px 0}
+.octbar:before{content:"";position:absolute;left:0;right:0;top:26px;height:4px;background:var(--line);border-radius:4px}
+.octbar .end{position:absolute;top:0;font-size:12px;color:var(--ink2)}.octbar .end.l{left:0}.octbar .end.r{right:0}
+.octbar #dots{position:absolute;inset:0}
+.octbar #dots i{position:absolute;top:20px;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:var(--ink)}
+.octbar #dots i.new{background:var(--coral);transform:scale(1.25)}
+.axis{position:relative;height:44px;margin:6px 8px 10px 44px;border-bottom:3px solid var(--line)}
+.axis .lab{position:absolute;left:-44px;bottom:2px;font-size:13px;font-weight:700;color:var(--ink2)}
+.axis i{position:absolute;bottom:-8px;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:var(--coral)}
+.axis i b{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);font-size:12px;font-style:normal;color:var(--ink)}
 </style>
 </head>
 <body>
@@ -386,7 +402,7 @@ function noteOnSound(n, vel = 0.8){
   else src.buffer = pianoBuffer(n);
   const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.Q.value = 0.4;
   lp.frequency.value = Math.min(18000, f * (4 + 30 * vel * vel));
-  const g = c.createGain(); g.gain.value = 0.3 + 0.9 * Math.pow(vel, 1.5);
+  const g = c.createGain(); g.gain.value = 0.06 + 1.14 * vel * vel;
   src.connect(lp); lp.connect(g); g.connect(master); src.start(t, m !== null ? sampleStart : 0);
   voices.set(n, { g, src });
 }
@@ -747,7 +763,7 @@ const L12 = [
       <p>Just higher.</p>
       ${footer("Continue")}`); wireFooter();
   }},
-  // meet the twins: hear a pair before naming it
+  // meet the octave: hear a pair, then name it
   { keys: true, render(){
       const A = base + 9;
       h(`<h1>Listen to these two</h1>
@@ -759,14 +775,27 @@ const L12 = [
       $("#ls").onclick = () => {
         playNote(A, 0.7); setTimeout(() => playNote(A + 12, 0.7), 750);
         setTimeout(() => { playNote(A, 1.2); playNote(A + 12, 1.2); }, 1500);
-        setTimeout(() => { $("#fb").className = "feedback good"; $("#fb").textContent = "They sound alike. Let's call them twins."; enableNext(); }, 2300);
+        setTimeout(() => { $("#fb").className = "feedback good"; $("#fb").textContent = "They sound alike, one higher. This jump is called an octave."; enableNext(); }, 2300);
       };
       this.cleanup = () => setHints([]);
   }},
-  // guided: find one twin, with a hint if needed
+  // why "octave": count the white keys
+  { keys: true, render(){
+      const wk = []; for(let n = base; n <= base + 12; n++) if(!isBlack(n)) wk.push(n);
+      h(`<h1>Why "octave"?</h1><p>Count the white keys from one end to the other.</p>
+      <div class="card" style="text-align:center"><span class="big" id="ct">0</span><p class="muted" style="margin:4px 0 0">white keys</p></div>
+      <div class="row" style="justify-content:center;margin-top:12px"><button class="btn" id="go">Count them</button></div>
+      <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      setHints([wk[0], wk[wk.length - 1]]); const tms = [];
+      $("#go").onclick = () => { tms.forEach(clearTimeout); setHints([]);
+        wk.forEach((n, i) => tms.push(setTimeout(() => { playNote(n, 0.45); setHints(wk.slice(0, i + 1)); $("#ct").textContent = i + 1; }, i * 420)));
+        tms.push(setTimeout(() => { $("#fb").className = "feedback good"; $("#fb").textContent = "8 white keys. \"Oct\" means 8, like an octopus's 8 arms."; enableNext(); }, wk.length * 420)); };
+      this.cleanup = () => { tms.forEach(clearTimeout); setHints([]); };
+  }},
+  // guided: find one octave, with a hint if needed
   { keys: true, render(){
       const k = base + 4, twin = k + 12; let misses = 0;
-      h(`<h1>Find this key's twin</h1>
+      h(`<h1>Find this key's octave</h1>
       <p>Look to the right, in the same spot.</p>
       <div class="feedback" id="fb"></div>
       ${footer("Practice", false)}`); wireFooter();
@@ -783,7 +812,7 @@ const L12 = [
   // practice: octave up
   { keys: true, render(){
       const rounds = 6; let r = 0, right = 0, tries = 0, target = null, t0 = 0, times = [];
-      h(`<div class="kicker">Practice</div><h1>Find the twin</h1>
+      h(`<div class="kicker">Practice</div><h1>Find the octave</h1>
       <p>Play the key that sounds the same, but higher.</p>
       <div class="card"><div class="row" style="justify-content:space-between"><span class="big" id="rd">1 / ${rounds}</span><span class="muted" id="sc">0 right</span></div>
       <p id="tg" style="margin:8px 0 0"></p><div class="feedback" id="fb"></div></div>
@@ -795,13 +824,13 @@ const L12 = [
           lessonResult = { right, rounds, avg }; enableNext(); return; }
         let n; do { n = base + Math.floor(Math.random() * 13); } while(n === target);
         target = n; tries = 0; setHints([n]); playNote(n, 0.6); t0 = performance.now();
-        $("#rd").textContent = `${r + 1} / ${rounds}`; $("#tg").innerHTML = "Listen, then find its twin.";
+        $("#rd").textContent = `${r + 1} / ${rounds}`; $("#tg").innerHTML = "Listen, then find the key an octave up.";
       };
       this.onNote = n => {
         if(target === null || r >= rounds) return;
         if(n === target) return;
         if(n === target + 12){ flash(n, "ok"); if(tries === 0){ right++; times.push(performance.now() - t0); }
-          $("#fb").className = "feedback good"; $("#fb").textContent = "Yes, that's the twin.";
+          $("#fb").className = "feedback good"; $("#fb").textContent = "Yes, that's the octave.";
           $("#sc").textContent = `${right} right`; r++; target = null; setTimeout(next, 700); }
         else { flash(n, "no"); tries++; $("#fb").className = "feedback bad"; $("#fb").textContent = "Not quite. Look right for a key in the same spot."; }
       };
@@ -813,11 +842,11 @@ const L12 = [
       const p = load(); p["1.2"] = { done: true, at: new Date().toISOString(), ...lessonResult }; save(p);
       const res = lessonResult || { right: 0, rounds: 6, avg: "–" };
       h(`<div class="kicker">Lesson complete</div><h1>Clicks became notes</h1>
-      <div class="card stat"><div><b>${res.right}/${res.rounds}</b>twins found</div><div><b>${res.avg} s</b>average</div></div>
+      <div class="card stat"><div><b>${res.right}/${res.rounds}</b>octaves found</div><div><b>${res.avg} s</b>average</div></div>
       <ul style="font-size:18px;line-height:1.7;margin-top:0">
         <li>20+ repeats a second is a tone</li>
         <li>Faster is higher (Hz)</li>
-        <li>Twice as fast sounds the same, higher</li>
+        <li>Twice as fast sounds alike: an octave higher</li>
       </ul>
       
       <div class="footer"><button class="btn ghost" id="again">Again</button><button class="btn coral" id="next">Next lesson</button></div>`);
@@ -1187,16 +1216,16 @@ const L14 = [
       <p>Why some sounds go together.</p>
       ${footer("Start")}`); wireFooter();
   }},
-  // recall twins, then name it
+  // recall octaves
   { keys: true, render(){
       const a = base + 4, b = a + 12; const hit = new Set();
-      h(`<h1>Remember the twins?</h1>
+      h(`<h1>Remember octaves?</h1>
       <p>Play both lit keys.</p>
       <div class="feedback" id="fb"></div>
       ${footer("Continue", false)}`); wireFooter();
       setHints([a, b]);
       this.onNote = n => { if(n === a || n === b){ flash(n, "ok"); hit.add(n); }
-        if(hit.size === 2){ $("#fb").className = "feedback good"; $("#fb").innerHTML = "Twins repeat twice as fast. Musicians call this jump an <b>octave</b>."; enableNext(); } };
+        if(hit.size === 2){ $("#fb").className = "feedback good"; $("#fb").innerHTML = "An octave up repeats twice as fast: ×2."; enableNext(); } };
       this.cleanup = () => setHints([]);
   }},
   // octave ladder
@@ -1356,6 +1385,36 @@ function tOff(key){ const T = tones.get(key); if(!T) return; tones.delete(key); 
   T.g.gain.cancelScheduledValues(t); T.g.gain.setValueAtTime(T.g.gain.value, t); T.g.gain.linearRampToValueAtTime(0, t + 0.06); T.o.stop(t + 0.1); }
 function tAllOff(){ [...tones.keys()].forEach(tOff); }
 function blip(fs, dur = 1.2, kind = "soft", vol = 0.12){ tAllOff(); fs.forEach((f, i) => tOn("b" + i, f, kind, vol)); return setTimeout(tAllOff, dur * 1000); }
+
+// stacked wave rows on a canvas: rows = [{ fn(x, t) -> -1..1, label, main, h }]; returns { stop, set(rows) }
+function waveRows(cv, rows){
+  const cssH = Math.round(cv.height * 0.7); cv.style.height = cssH + "px"; cv.width = (cv.clientWidth || 350) * 2; cv.height = cssH * 2;
+  const g = cv.getContext("2d"); let raf, R = rows;
+  const css = v => getComputedStyle(document.body).getPropertyValue(v).trim();
+  const draw = () => {
+    const W = cv.width, H = cv.height, t = performance.now() / 1000; g.clearRect(0, 0, W, H);
+    const tot = R.reduce((a, r) => a + (r.h || 1), 0); let y0 = 0;
+    R.forEach(r => {
+      const hh = H * (r.h || 1) / tot, mid = y0 + hh / 2, amp = hh / 2 - 8;
+      g.strokeStyle = css("--line"); g.lineWidth = 1.5; g.beginPath(); g.moveTo(0, mid); g.lineTo(W, mid); g.stroke();
+      g.strokeStyle = r.main ? css("--coral") : (r.color || css("--ink2")); g.lineWidth = r.main ? 4 : 2.5; g.lineJoin = "round"; g.beginPath();
+      for(let x = 0; x <= W; x += 2){ const y = mid - amp * Math.max(-1, Math.min(1, r.fn(x / W, t))); x ? g.lineTo(x, y) : g.moveTo(x, y); }
+      g.stroke();
+      if(r.label){ g.font = "600 22px Inter, system-ui, sans-serif"; g.fillStyle = r.main ? css("--coral") : css("--ink2"); g.fillText(r.label, 6, y0 + 22); }
+      y0 += hh; });
+    raf = requestAnimationFrame(draw); };
+  draw();
+  return { stop: () => cancelAnimationFrame(raf), set: rows => R = rows };
+}
+// two close tones and their sum; d = gap in Hz, shown honestly in wobble speed, scaled in width
+function beatRows(getD, on = () => true){
+  const C = 9, k = 0.45, sn = (cyc, hz, x, t) => Math.sin(2 * Math.PI * (cyc * x - hz * t * 0.5));
+  return [
+    { label: "Sound 1", fn: (x, t) => 0.8 * sn(C, 1, x, t) },
+    { label: "Sound 2", fn: (x, t) => 0.8 * sn(C + Math.abs(getD()) * k, 1 + Math.abs(getD()) * 2, x, t) },
+    { label: "Together", main: true, h: 1.4, fn: (x, t) => on() ? 0.48 * (sn(C, 1, x, t) + sn(C + Math.abs(getD()) * k, 1 + Math.abs(getD()) * 2, x, t)) : 0 },
+  ];
+}
 // a row of "listen" buttons; calls done() once every button was tapped
 function listenRow(items, done){
   const heard = new Set();
@@ -1411,10 +1470,11 @@ const L15 = [
       <div class="choices">
         <button class="choice" data-li="0">Two matching sounds</button>
         <button class="choice" data-li="1">Two almost matching sounds</button>
-      </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
-      let tm; listenRow([() => { clearTimeout(tm); tm = blip([220, 220], 2.5, "pure", 0.1); }, () => { clearTimeout(tm); tm = blip([220, 222], 2.5, "pure", 0.1); }],
-        () => { $("#fb").className = "feedback good"; $("#fb").textContent = "Hear the second one wobble? That's called beating."; enableNext(); });
-      this.cleanup = () => { clearTimeout(tm); tAllOff(); };
+      </div><canvas id="cv" width="700" height="250" style="background:none;margin-top:10px"></canvas><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      let gap = 0, on = false; const wv = waveRows($("#cv"), beatRows(() => gap, () => on));
+      let tm; listenRow([() => { clearTimeout(tm); gap = 0; on = true; tm = blip([220, 220], 2.5, "pure", 0.1); }, () => { clearTimeout(tm); gap = 2; on = true; tm = blip([220, 222], 2.5, "pure", 0.1); }],
+        () => { $("#fb").className = "feedback good"; $("#fb").textContent = "The waves drift in and out of step, so together they swell and fade. That wobble is beating."; enableNext(); });
+      this.cleanup = () => { clearTimeout(tm); tAllOff(); wv.stop(); };
   }},
   { render(){
       h(`<h1>Count the wobbles</h1><p>Tap each to hear it.</p>
@@ -1434,15 +1494,16 @@ const L15 = [
         <div class="row" style="justify-content:center;margin-bottom:14px"><button class="btn" id="pp" style="min-width:160px">Play</button></div>
         <div class="row" style="justify-content:space-between"><span class="big" id="dv">0 Hz</span><span class="muted" id="lab">apart</span></div>
         <input type="range" id="sl" min="0" max="60" value="0" step="0.5">
+        <canvas id="cv" width="700" height="220" style="background:none;margin-top:8px"></canvas>
       </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
-      const sl = $("#sl");
+      const sl = $("#sl"); const wv = waveRows($("#cv"), beatRows(() => +sl.value));
       const upd = () => { const d = +sl.value; $("#dv").textContent = d + " Hz";
         $("#lab").textContent = d < 0.5 ? "matched" : d < 8 ? "wobbling" : d < 35 ? "rough" : "two sounds";
         if(playing){ cancelAnimationFrame(raf); raf = requestAnimationFrame(() => { tOn("a", 220, "pure", 0.08); tOn("b", 220 + d, "pure", 0.08); }); maxD = Math.max(maxD, d); }
         if(maxD >= 40){ $("#fb").className = "feedback good"; $("#fb").textContent = "Wobble → rough → two separate sounds."; enableNext(); } };
       sl.oninput = upd;
       $("#pp").onclick = () => { playing = !playing; $("#pp").textContent = playing ? "Stop" : "Play"; if(playing) upd(); else tAllOff(); };
-      this.cleanup = tAllOff;
+      this.cleanup = () => { tAllOff(); wv.stop(); };
   }},
   { render(){
       h(`<h1>220 Hz and 225 Hz wobble…</h1>
@@ -1464,13 +1525,14 @@ const L15 = [
         <div class="row" style="justify-content:center;margin-bottom:14px"><button class="btn" id="pp" style="min-width:160px">Play</button></div>
         <input type="range" id="sl" min="-100" max="100" value="${Math.round(off * 10)}">
         <div class="row" style="justify-content:space-between"><span class="muted">lower</span><span class="muted">higher</span></div>
+        <canvas id="cv" width="700" height="220" style="background:none;margin-top:8px"></canvas>
       </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
-      const sl = $("#sl");
+      const sl = $("#sl"); const wv = waveRows($("#cv"), beatRows(() => Math.abs(+sl.value / 10) <= 0.4 ? 0 : +sl.value / 10));
       const upd = () => { const d = +sl.value / 10; if(playing){ tOn("a", 220, "soft", 0.1); tOn("b", 220 + d, "soft", 0.1); }
-        if(playing && Math.abs(d) <= 0.4 && !done){ done = true; $("#fb").className = "feedback good"; $("#fb").textContent = "In tune! That's how musicians tune their strings."; enableNext(); } };
+        if(playing && Math.abs(d) <= 0.4 && !done){ done = true; $("#fb").className = "feedback good"; $("#fb").textContent = "In tune! The waves line up and the wobble stops. That's how musicians tune."; enableNext(); } };
       sl.oninput = upd;
       $("#pp").onclick = () => { playing = !playing; $("#pp").textContent = playing ? "Stop" : "Play"; if(playing) upd(); else tAllOff(); };
-      this.cleanup = tAllOff;
+      this.cleanup = () => { tAllOff(); wv.stop(); };
   }},
   { render(){
       const pairs = shuffle([[0, 1], [3, 1], [0, 1], [5, 1], [0.0, 1], [2, 1]]).map(([d]) => d);
@@ -1566,37 +1628,38 @@ const L17 = [
       this.cleanup = () => { clearTimeout(tm); tAllOff(); };
   }},
   { render(){
-      h(`<h1>One note hides more</h1><p>Tap the low note, then each hidden part.</p>
-      <div class="choices">
-        <button class="choice" data-li="0">Low note: 110 Hz</button>
-        <button class="choice" data-li="1">Hidden ×2: 220 Hz</button>
-        <button class="choice" data-li="2">Hidden ×3: 330 Hz</button>
-        <button class="choice" data-li="3">Hidden ×4: 440 Hz</button>
-      </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
-      let tm; listenRow([() => { tAllOff(); playNote(45, 2); }, ...[220, 330, 440].map(f => () => { clearTimeout(tm); tm = blip([f], 1.2, "pure", 0.12); })],
-        () => { $("#fb").className = "feedback good"; $("#fb").textContent = "These hidden parts are called harmonics. Every real note has them."; enableNext(); });
-      this.cleanup = () => { clearTimeout(tm); tAllOff(); };
+      h(`<h1>One note, many waves</h1><p>A real note is a low wave plus faster waves on top.</p>
+      <canvas id="cv" width="700" height="330" style="background:none"></canvas>
+      <div class="choices" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button class="choice" data-li="0">×1 · 110 Hz</button>
+        <button class="choice" data-li="1">×2 · 220 Hz</button>
+        <button class="choice" data-li="2">×3 · 330 Hz</button>
+        <button class="choice" data-li="3">×4 · 440 Hz</button>
+      </div><button class="choice" data-li="4" style="margin-top:8px">All together</button><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      const A = [1, 0.5, 0.33, 0.25]; let hi = -1;
+      const row = k => ({ label: `×${k + 1}`, color: hi === k || hi === 4 ? getComputedStyle(document.body).getPropertyValue("--ink").trim() : undefined, fn: x => A[k] / A[0] * Math.sin(2 * Math.PI * 2 * (k + 1) * x) });
+      const rowsNow = () => [0, 1, 2, 3].map(row).concat([{ label: "Together", main: true, h: 1.6, fn: x => A.reduce((y, a, k) => y + a * Math.sin(2 * Math.PI * 2 * (k + 1) * x), 0) / 1.6 }]);
+      const wv = waveRows($("#cv"), rowsNow());
+      let tm; listenRow([...[110, 220, 330, 440].map((f, k) => () => { clearTimeout(tm); hi = k; wv.set(rowsNow()); tm = blip([f], 1.2, "pure", 0.14); }),
+        () => { clearTimeout(tm); hi = 4; wv.set(rowsNow()); tAllOff(); [110, 220, 330, 440].forEach((f, k) => tOn("h" + k, f, "pure", 0.12 * A[k])); tm = setTimeout(tAllOff, 1600); }],
+        () => { $("#fb").className = "feedback good"; $("#fb").textContent = "The faster waves are called harmonics. Together they make one note."; enableNext(); });
+      this.cleanup = () => { clearTimeout(tm); tAllOff(); wv.stop(); };
   }},
   { render(){
       const mix = [1, 0, 0, 0, 0, 0]; let playing = false, moved = new Set(), raf;
       h(`<h1>Build a sound</h1><p>Tap Play, then raise a few bars.</p>
       <div class="card">
         <div class="row" style="justify-content:center;margin-bottom:14px"><button class="btn" id="pp" style="min-width:160px">Play</button></div>
-        <canvas id="cv" width="700" height="120" style="background:none"></canvas>
+        <canvas id="cv" width="700" height="300" style="background:none"></canvas>
         <div class="bars">${mix.map((v, i) => `<label><input type="range" class="vbar" data-i="${i}" min="0" max="100" value="${v * 100}" orient="vertical"><span>×${i + 1}</span></label>`).join("")}</div>
       </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
-      const cv = $("#cv"), g = cv.getContext("2d");
-      const draw = () => { const W = cv.width, H = cv.height; g.clearRect(0, 0, W, H);
-        const tot = mix.reduce((a, b) => a + b, 0) || 1;
-        g.strokeStyle = getComputedStyle(document.body).getPropertyValue("--coral"); g.lineWidth = 4; g.beginPath();
-        for(let x = 0; x <= W; x += 2){ let y = 0; mix.forEach((a, k) => y += a * Math.sin((k + 1) * x / W * 4 * Math.PI)); y = H / 2 - y / tot * (H / 2 - 6); x ? g.lineTo(x, y) : g.moveTo(x, y); }
-        g.stroke(); raf = requestAnimationFrame(draw); };
-      draw();
+      const wv = waveRows($("#cv"), mix.map((_, k) => ({ label: `×${k + 1}`, h: 0.55, fn: x => mix[k] * Math.sin((k + 1) * x * 4 * Math.PI) }))
+        .concat([{ label: "Together", main: true, h: 1.8, fn: x => { const tot = mix.reduce((a, b) => a + b, 0) || 1; return mix.reduce((y, a, k) => y + a * Math.sin((k + 1) * x * 4 * Math.PI), 0) / tot; } }]));
       screenEl.querySelectorAll(".vbar").forEach(s => s.oninput = () => { mix[+s.dataset.i] = +s.value / 100; if(+s.dataset.i > 0 && +s.value > 20) moved.add(s.dataset.i);
         if(playing) tWave("a", mix);
         if(moved.size >= 2){ $("#fb").className = "feedback good"; $("#fb").textContent = "More harmonics, brighter sound. Same pitch."; enableNext(); } });
       $("#pp").onclick = () => { playing = !playing; $("#pp").textContent = playing ? "Stop" : "Play"; if(playing){ tOn("a", 165, mix, 0.12); } else tAllOff(); };
-      this.cleanup = () => { cancelAnimationFrame(raf); tAllOff(); };
+      this.cleanup = () => { wv.stop(); tAllOff(); };
   }},
   { render(){
       h(`<h1>Piano and flute, same pitch. Why do they sound different?</h1>
@@ -1609,6 +1672,19 @@ const L17 = [
         if(b.dataset.a === "1"){ b.classList.add("right"); $("#fb").className = "feedback good"; $("#fb").textContent = "Right. Same pitch, different harmonics: that's timbre."; enableNext(); }
         else { b.classList.add("wrong"); $("#fb").className = "feedback bad"; $("#fb").textContent = "Not quite. Same pitch means same frequency."; }
       });
+  }},
+  { render(){
+      const W = (fn, c = 2) => { let d = ""; for(let x = 0; x <= 120; x += 1.5) d += (x ? " L" : "M") + x + "," + (20 - 15 * fn(x / 120 * c % 1)).toFixed(1); return `<svg viewBox="0 0 120 40" width="96" height="32" aria-hidden="true"><path d="${d}" fill="none" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round"/></svg>`; };
+      const sine = p => Math.sin(2 * Math.PI * p), saw = p => 1 - 2 * p, sq = p => p < 0.5 ? 0.85 : -0.85;
+      h(`<h1>Three sound colours</h1><p>Tap each. Look at its wave.</p>
+      <div class="choices">
+        <button class="choice tim" data-li="0">${W(sine)}<span><b>Smooth</b><br><span class="muted">Only the low wave. Like a flute.</span></span></button>
+        <button class="choice tim" data-li="1">${W(saw)}<span><b>Bright</b><br><span class="muted">Every harmonic. Buzzy, like a brass horn.</span></span></button>
+        <button class="choice tim" data-li="2">${W(sq)}<span><b>Hollow</b><br><span class="muted">Only ×1, ×3, ×5… Like a clarinet.</span></span></button>
+      </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      let tm; listenRow(["pure", "bright", "hollow"].map((k, i) => () => { clearTimeout(tm); tm = blip([196], 1.4, k, i ? 0.07 : 0.16); }),
+        () => { $("#fb").className = "feedback good"; $("#fb").textContent = "More harmonics sound brighter. Missing ones sound hollow."; enableNext(); });
+      this.cleanup = () => { clearTimeout(tm); tAllOff(); };
   }},
   { render(){
       const kinds = ["pure", "bright", "hollow"];
@@ -1628,48 +1704,84 @@ const L18 = [
       h(`<div class="kicker">Stage 1 · Sound</div><h1>Why 12 notes</h1><p>The keyboard pattern has a reason.</p>${footer("Start")}`); wireFooter(); }},
   { keys: true, render(){
       const start = base; let k = 0;
-      h(`<h1>Count to the twin</h1><p>Play each lit key, white and black.</p>
+      h(`<h1>Count up an octave</h1><p>Play each lit key, white and black.</p>
       <div class="card" style="text-align:center"><span class="big" id="ct">0</span><p class="muted" style="margin:4px 0 0">steps</p></div>
       <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
       setHints([start]);
       this.onNote = n => {
         if(k > 12) return;
         if(n === start + k){ flash(n, "ok"); $("#ct").textContent = k; k++;
-          if(k <= 12) setHints([start + k]); else { setHints([start, start + 12]); $("#fb").className = "feedback good"; $("#fb").textContent = "12 steps to the twin. Then the pattern repeats."; enableNext(); } }
+          if(k <= 12) setHints([start + k]); else { setHints([start, start + 12]); $("#fb").className = "feedback good"; $("#fb").textContent = "12 steps make an octave. Then the pattern repeats."; enableNext(); } }
         else { flash(n, "no"); }
       };
       this.cleanup = () => setHints([]);
   }},
   { render(){
-      h(`<h1>12 equal steps</h1><p>Each key is about ×1.06. Twelve make ×2.</p>
-      <div class="card" style="text-align:center"><span class="big">220 → 440 Hz</span><p class="muted" style="margin:6px 0 0">220 × 1.06 × 1.06 … (12 times) ≈ 440</p></div>
-      <div class="row" style="justify-content:center;margin-top:14px"><button class="btn" id="go" style="min-width:160px">Hear the 12 steps</button></div>
+      h(`<h1>An octave is ×2</h1><p>An octave up has double the Hz.</p>
+      <div class="card" style="text-align:center"><span class="big">220 → 440 Hz</span></div>
+      <div class="row" style="justify-content:center;margin-top:14px"><button class="btn ghost" id="hear">Hear it</button></div>
       <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
-      $("#go").onclick = () => { for(let i = 0; i <= 12; i++) setTimeout(() => playNote(57 + i, 0.4), i * 260);
-        setTimeout(() => { $("#fb").className = "feedback good"; $("#fb").textContent = "Every step the same size. You land on the twin."; enableNext(); }, 13 * 260); };
+      $("#hear").onclick = () => { playNote(57, 0.6); setTimeout(() => playNote(69, 0.9), 650); setTimeout(() => { $("#fb").className = "feedback good"; $("#fb").textContent = "Between them are 12 steps. How big is each step?"; enableNext(); }, 1300); };
   }},
   { render(){
-      let i = 0, f = 130.81, tm;
-      h(`<h1>Stack ×1.5</h1><p>Each step: ×1.5. Too high? Drop an octave.</p>
-      <div class="card" style="text-align:center"><span class="big" id="st">0 / 12</span><p class="muted" id="fx" style="margin:6px 0 0">Start: 131 Hz</p></div>
-      <div class="row" style="justify-content:center;margin-top:14px"><button class="btn" id="go" style="min-width:160px">Next step</button></div>
+      const hz = [...Array(13)].map((_, i) => Math.round(220 * Math.pow(2, i / 12)));
+      h(`<h1>12 equal steps</h1><p>Each step multiplies by the same number.</p>
+      <div class="ladder">${hz.map((f, i) => `<div class="rung" id="r${i}"><span>${i}</span><b>${f} Hz</b><i>${i ? "×1.06" : "start"}</i></div>`).join("")}</div>
+      <div class="row" style="justify-content:center;margin-top:12px"><button class="btn" id="go">Hear the 12 steps</button></div>
       <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      const tms = [];
+      $("#go").onclick = () => { tms.forEach(clearTimeout); screenEl.querySelectorAll(".rung").forEach(r => r.classList.remove("on"));
+        for(let i = 0; i <= 12; i++) tms.push(setTimeout(() => { playNote(57 + i, 0.5); $("#r" + i)?.classList.add("on"); }, i * 380));
+        tms.push(setTimeout(() => { $("#fb").className = "feedback good"; $("#fb").textContent = "Each step is ×1.06. Twelve of them make ×2: an octave."; enableNext(); }, 13 * 380)); };
+      this.cleanup = () => tms.forEach(clearTimeout);
+  }},
+  { render(){
+      h(`<h1>Which number, multiplied 12 times, makes 2?</h1>
+      <div class="choices">
+        <button class="choice" data-a="1">× 1.06</button>
+        <button class="choice" data-a="0">× 1.5</button>
+        <button class="choice" data-a="0">× 2</button>
+      </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      screenEl.querySelectorAll(".choice").forEach(b => b.onclick = () => {
+        if(b.dataset.a === "1"){ b.classList.add("right"); $("#fb").className = "feedback good"; $("#fb").textContent = "Right. 1.06 × 1.06 × … twelve times ≈ 2."; enableNext(); }
+        else { b.classList.add("wrong"); $("#fb").className = "feedback bad"; $("#fb").textContent = "Too big. Twelve of those go way past the octave."; }
+      });
+  }},
+  { render(){
+      h(`<h1>But why 12?</h1><p>After ×2, the sweetest pair is ×1.5.</p>
+      <div class="choices">
+        <button class="choice" data-li="0">220 + 330 Hz <span class="muted">(×1.5)</span></button>
+      </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      let tm; listenRow([() => { clearTimeout(tm); tm = blip([220, 330], 2, "soft", 0.1); }],
+        () => { $("#fb").className = "feedback good"; $("#fb").textContent = "Smooth, no wobble. Let's build notes from ×1.5."; enableNext(); });
+      this.cleanup = () => { clearTimeout(tm); tAllOff(); };
+  }},
+  { render(){
+      let i = 0, f = 130.81, tm; const dots = [0];
+      const pos = x => (Math.log2(x / 130.81) * 100).toFixed(2);
+      h(`<h1>Stack ×1.5</h1><p>Multiply by 1.5. Past the octave? Halve it.</p>
+      <div class="card"><div class="octbar"><span class="end l">start</span><span class="end r">octave</span><div id="dots"></div></div>
+        <p class="muted" id="fx" style="margin:10px 0 0;text-align:center">Step 0 · 131 Hz</p></div>
+      <div class="row" style="justify-content:center;margin-top:14px"><button class="btn" id="go">Next step</button></div>
+      <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      const paint = last => { $("#dots").innerHTML = dots.map((x, j) => `<i style="left:${x}%" class="${j === last ? "new" : ""}"></i>`).join(""); };
+      paint(-1);
       $("#go").onclick = () => {
-        if(i >= 12) return; i++; f *= 1.5; while(f > 261.62) f /= 2;    // fold back into one octave
-        clearTimeout(tm); tm = blip([f], 0.7, "soft", 0.14);
-        $("#st").textContent = `${i} / 12`; $("#fx").textContent = `${Math.round(f)} Hz`;
-        if(i === 12){ $("#go").disabled = true; $("#fb").className = "feedback good"; $("#fb").textContent = "12 steps of ×1.5 land almost exactly home (133 vs 131 Hz). That's why there are 12 notes."; enableNext(); }
+        if(i >= 12) return; i++; let from = f * 1.5, halved = false; f = from; while(f > 261.62){ f /= 2; halved = true; }
+        dots.push(+pos(f)); paint(dots.length - 1); clearTimeout(tm); tm = blip([f], 0.7, "soft", 0.14);
+        $("#fx").textContent = `Step ${i} · ×1.5 = ${Math.round(from)} Hz${halved ? ` → halve → ${Math.round(f)} Hz` : ""}`;
+        if(i === 12){ $("#go").disabled = true; $("#fb").className = "feedback good"; $("#fb").textContent = "Step 12 lands right next to the start. The 12 dots you made are the 12 keys."; enableNext(); }
       };
       this.cleanup = () => { clearTimeout(tm); tAllOff(); };
   }},
   { render(){
-      h(`<h1>A tiny bend</h1><p>Tap both. Can you hear a difference?</p>
+      h(`<h1>Almost home</h1><p>Step 12 missed by a hair: 133 Hz, not 131. So pianos shrink every ×1.5 to ×1.498. Then all 12 steps fit exactly.</p>
       <div class="choices">
         <button class="choice" data-li="0">Pure ×1.5</button>
         <button class="choice" data-li="1">Piano's ×1.498</button>
       </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
       let tm; listenRow([() => { clearTimeout(tm); tm = blip([220, 330], 2.5, "soft", 0.1); }, () => { clearTimeout(tm); tm = blip([220, 220 * Math.pow(2, 7 / 12)], 2.5, "soft", 0.1); }],
-        () => { $("#fb").className = "feedback good"; $("#fb").textContent = "Almost the same. Pianos bend ×1.5 a tiny bit so all 12 steps are equal."; enableNext(); });
+        () => { $("#fb").className = "feedback good"; $("#fb").textContent = "You can barely tell. That tiny shrink keeps all 12 keys equal."; enableNext(); });
       this.cleanup = () => { clearTimeout(tm); tAllOff(); };
   }},
   { render(){
@@ -1680,13 +1792,13 @@ const L18 = [
         <button class="choice" data-a="0">88</button>
       </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
       screenEl.querySelectorAll(".choice").forEach(b => b.onclick = () => {
-        if(b.dataset.a === "1"){ b.classList.add("right"); $("#fb").className = "feedback good"; $("#fb").textContent = "Right. 12 keys, then the twin starts it again."; enableNext(); }
-        else { b.classList.add("wrong"); $("#fb").className = "feedback bad"; $("#fb").textContent = "Count white and black keys up to the twin."; }
+        if(b.dataset.a === "1"){ b.classList.add("right"); $("#fb").className = "feedback good"; $("#fb").textContent = "Right. 12 keys, then the next octave starts it again."; enableNext(); }
+        else { b.classList.add("wrong"); $("#fb").className = "feedback bad"; $("#fb").textContent = "Count white and black keys up to the octave."; }
       });
   }},
   { keys: true, render(){
       const rounds = 3; let r = 0, k = 0, start, t0, times = [];
-      h(`<div class="kicker">Practice</div><h1>Climb to the twin</h1><p>Play every key from the lit one up to its twin.</p>
+      h(`<div class="kicker">Practice</div><h1>Climb an octave</h1><p>Play every key from the lit one up an octave.</p>
       <div class="card"><div class="row" style="justify-content:space-between"><span class="big" id="rd">1 / ${rounds}</span><span class="muted" id="ct">0 of 12</span></div></div>
       <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
       const next = () => { if(r >= rounds){ setHints([]); const avg = (times.reduce((a, b) => a + b, 0) / times.length / 1000).toFixed(1);
@@ -1694,11 +1806,11 @@ const L18 = [
         start = base + Math.floor(Math.random() * 12); k = 0; setHints([start]); $("#rd").textContent = `${r + 1} / ${rounds}`; $("#ct").textContent = "0 of 12"; t0 = 0; };
       this.onNote = n => { if(r >= rounds) return;
         if(n === start + k){ flash(n, "ok"); if(k === 0) t0 = performance.now(); k++; $("#ct").textContent = `${k - 1} of 12`;
-          if(k <= 12) setHints([start + k]); else { times.push(performance.now() - t0); r++; $("#fb").className = "feedback good"; $("#fb").textContent = "Twin reached!"; setTimeout(next, 800); } }
+          if(k <= 12) setHints([start + k]); else { times.push(performance.now() - t0); r++; $("#fb").className = "feedback good"; $("#fb").textContent = "Octave reached!"; setTimeout(next, 800); } }
         else flash(n, "no"); };
       next(); this.cleanup = () => setHints([]);
   }},
-  { render(){ lessonSummary("1.8", "You know why there are 12", null, ["12 keys, then the twin: the pattern repeats", "Each step is about ×1.06", "Twelve ×1.5 steps land almost home"], "1.9"); }},
+  { render(){ lessonSummary("1.8", "You know why there are 12", null, ["12 keys make an octave, then it repeats", "Each step is about ×1.06", "Twelve ×1.5 steps land almost home"], "1.9"); }},
 ];
 
 // ===== Lesson 1.9: How we hear =====
@@ -1714,14 +1826,42 @@ const L19 = [
       </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
       const jump = (a, b) => { tAllOff(); playNote(a, 0.6); setTimeout(() => playNote(b, 0.9), 650); };
       listenRow([() => jump(45, 57), () => jump(69, 81)],
-        () => { $("#fb").className = "feedback good"; $("#fb").textContent = "Same size! Both are ×2. Ears hear ×, not +."; enableNext(); });
+        () => { $("#fb").className = "feedback good"; $("#fb").textContent = "They feel the same size, though one adds 110 Hz and the other 440. Both are ×2."; enableNext(); });
   }},
   { render(){
-      h(`<h1>Which jump feels bigger?</h1>
+      const tw = [110, 220, 440, 880];
+      h(`<h1>Your ear hears ×</h1><p>In Hz the octaves spread apart. To your ear they're evenly spaced.</p>
+      <div class="card"><div class="axis"><span class="lab">Hz</span>${tw.map(f => `<i style="left:${(f / 900 * 100).toFixed(1)}%"><b>${f}</b></i>`).join("")}</div>
+        <div class="axis"><span class="lab">Ear</span>${tw.map((f, i) => `<i style="left:${(4 + i * 30.6).toFixed(1)}%"><b>${f}</b></i>`).join("")}</div></div>
+      <div class="row" style="justify-content:center;margin-top:12px"><button class="btn ghost" id="hear">Hear the octaves</button></div>
+      <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      const tms = [];
+      $("#hear").onclick = () => { tms.forEach(clearTimeout); [45, 57, 69, 81].forEach((n, i) => tms.push(setTimeout(() => playNote(n, 0.6), i * 600)));
+        tms.push(setTimeout(() => { $("#fb").className = "feedback good"; $("#fb").textContent = "Equal steps to your ear. That's why the keys are evenly spaced too."; enableNext(); }, 2400)); };
+      this.cleanup = () => tms.forEach(clearTimeout);
+  }},
+  { render(){
+      h(`<h1>Start at 300 Hz. Go up two octaves.</h1>
       <div class="choices">
-        <button class="choice" data-a="1">100 → 200 Hz</button>
-        <button class="choice" data-a="0">1000 → 1100 Hz</button>
+        <button class="choice" data-a="0">900 Hz</button>
+        <button class="choice" data-a="1">1200 Hz</button>
+        <button class="choice" data-a="0">600 Hz</button>
       </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      screenEl.querySelectorAll(".choice").forEach(b => b.onclick = () => {
+        if(b.dataset.a === "1"){ b.classList.add("right"); $("#fb").className = "feedback good"; $("#fb").textContent = "Right. ×2 = 600, then ×2 again = 1200."; enableNext(); }
+        else { b.classList.add("wrong"); $("#fb").className = "feedback bad"; $("#fb").textContent = b.textContent.startsWith("600") ? "That's one octave. Go up once more." : "Each octave is ×2, not +300."; }
+      });
+  }},
+  { render(){
+      h(`<h1>Which jump feels bigger?</h1><p>Both add 100 Hz. Hear them, then pick.</p>
+      <div class="row" style="justify-content:center;gap:10px;flex-wrap:wrap"><button class="btn ghost" id="hear">Hear A</button><button class="btn ghost" id="again">Hear B</button></div>
+      <div class="choices" style="margin-top:14px">
+        <button class="choice" data-a="1">A: 100 → 200 Hz</button>
+        <button class="choice" data-a="0">B: 1000 → 1100 Hz</button>
+      </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      let tm; const jump = (a, b) => { clearTimeout(tm); tAllOff(); tOn("j1", a, "soft", 0.16); tm = setTimeout(() => { tOff("j1"); tOn("j2", b, "soft", 0.16); tm = setTimeout(tAllOff, 800); }, 700); };
+      $("#hear").onclick = () => jump(100, 200); $("#again").onclick = () => jump(1000, 1100);
+      this.cleanup = () => { clearTimeout(tm); tAllOff(); };
       screenEl.querySelectorAll(".choice").forEach(b => b.onclick = () => {
         if(b.dataset.a === "1"){ b.classList.add("right"); $("#fb").className = "feedback good"; $("#fb").textContent = "Right. ×2 is a whole octave. ×1.1 is a small step."; enableNext(); }
         else { b.classList.add("wrong"); $("#fb").className = "feedback bad"; $("#fb").textContent = "Think ×, not +. Which one doubles?"; }
@@ -1747,7 +1887,7 @@ const L19 = [
         { q: "Smooth or rough?", labels: ["Smooth", "Rough"], make: () => { const s = Math.random() < 0.5, lo = base + 2; return { play: () => chord([lo, lo + (s ? 12 : 1)], 3), answer: s ? 0 : 1 }; } },
         { q: "Still or wobbling?", labels: ["Still", "Wobbling"], make: () => { const w = Math.random() < 0.5; return { play: () => blip([247, w ? 250 : 247], 2.5, "soft", 0.1), answer: w ? 1 : 0 }; } },
         { q: "Soft or loud?", labels: ["Soft", "Loud"], make: () => { const l = Math.random() < 0.5, n = base + 7; return { play: () => { noteOnSound(n, l ? 1 : 0.15); setTimeout(() => noteOffSound(n), 900); }, answer: l ? 1 : 0 }; } },
-        { q: "Twins or not?", labels: ["Twins", "Not twins"], make: () => { const t = Math.random() < 0.5, lo = base + 4; return { play: () => { playNote(lo, 0.6); setTimeout(() => playNote(lo + (t ? 12 : 10), 0.8), 700); }, answer: t ? 0 : 1 }; } },
+        { q: "Octave or not?", labels: ["Octave", "Not octave"], make: () => { const t = Math.random() < 0.5, lo = base + 4; return { play: () => { playNote(lo, 0.6); setTimeout(() => playNote(lo + (t ? 12 : 10), 0.8), 700); }, answer: t ? 0 : 1 }; } },
         { q: "Smooth or bright?", labels: ["Smooth", "Bright"], make: () => { const b = Math.random() < 0.5; return { play: () => blip([196], 1.4, b ? "bright" : "pure", b ? 0.07 : 0.16), answer: b ? 1 : 0 }; } },
       ]);
       let r = 0, right = 0, first = true, cur;
