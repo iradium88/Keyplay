@@ -166,9 +166,10 @@ body.v-lesson .kbwrap{position:static;flex:none}
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,106,61,.55)}70%{box-shadow:0 0 0 14px rgba(255,106,61,0)}100%{box-shadow:0 0 0 0 rgba(255,106,61,0)}}
 .nudge{animation:pulse 1.3s ease-out infinite;border-radius:16px;position:relative;z-index:1}
 input[type=range].nudge{border-radius:99px}
-.wk.hint,.bk.hint{animation:keyglow 1.4s ease-in-out infinite}
-@keyframes keyglow{50%{filter:brightness(.9)}}
-.wk.hint{box-shadow:inset 0 -18px 0 var(--coral)!important}
+.wk.hint{animation:keyglow 1.4s ease-in-out infinite}
+@keyframes keyglow{50%{box-shadow:inset 0 -30px 0 var(--coral)}}
+.bk.hint{animation:bkglow 1.4s ease-in-out infinite}@keyframes bkglow{50%{box-shadow:0 0 0 5px var(--coral)}}
+.wk.hint{box-shadow:inset 0 -18px 0 var(--coral)}
 .nudgekeys{animation:pulse 1.3s ease-out 1}
 .btn.locked{background:var(--soft);color:#A9A9B8;box-shadow:0 4px 0 var(--line)}
 .btn.locked:active{transform:none}
@@ -183,6 +184,35 @@ input[type=range].nudge{border-radius:99px}
 .bars{display:flex;justify-content:space-between;gap:6px;margin-top:10px}
 .bars label{display:flex;flex-direction:column;align-items:center;flex:1;font-size:14px;color:var(--ink2);font-weight:600}
 .bars input.vbar{writing-mode:vertical-lr;direction:rtl;width:28px;height:110px;margin:0 0 4px}
+/* ---- stages 2-9 ---- */
+.wk .lbl,.bk .lbl{display:none;pointer-events:none}
+body.labels .wk .lbl{display:block;font-size:13px;font-weight:700;color:#8A8AA0}
+body.labels .wk.mid .lbl{color:var(--coral)}
+body.labels2 .bk .lbl{display:block;position:absolute;bottom:6px;left:0;right:0;text-align:center;font-size:9px;color:#fff;font-weight:700}
+.wk.demo{background:#FFE3D8!important}.bk.demo{background:#FF9A78!important}
+.wk.got{background:#D8F3E5!important}.bk.got{background:#20A66A!important}
+.toks{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:6px 0 4px}
+.tok{min-width:34px;padding:8px 10px;border:2px solid var(--line);border-radius:12px;font-weight:700;font-size:18px;color:var(--ink2)}
+.tok.cur{border-color:var(--coral);color:var(--ink);box-shadow:0 3px 0 var(--coral)}.tok.done{background:#E9F8F0;border-color:var(--good);color:#0E5A38}
+.prompt{font-size:30px;font-weight:800;text-align:center;margin:10px 0 6px;min-height:38px}
+.staff{background:#fff;border-radius:14px;margin:8px auto;max-width:600px;display:flex;justify-content:center;overflow:hidden}
+.staff svg{display:block;max-width:100%}
+.dots{display:flex;gap:8px;justify-content:center;margin:14px 0}.dots i{width:14px;height:14px;border-radius:50%;background:var(--soft);border:2px solid var(--line)}.dots i.on{background:var(--good);border-color:var(--good)}
+.rhy{position:relative;display:flex;gap:4px;height:54px;margin:12px 0 4px}
+.rhy .rn{background:#fff;border:3px solid var(--ink);border-radius:10px}.rhy .rr{border:2px dashed var(--line);border-radius:10px}
+.rhy .rn.hit{background:#D8F3E5;border-color:var(--good)}.rhy .rn.miss{background:#FBD9DA;border-color:var(--bad)}.rhy .rn.short{background:#FFF1D6;border-color:#E0A100}
+.rhy #ph{position:absolute;top:-6px;bottom:-6px;width:3px;background:var(--coral);border-radius:2px;opacity:0}
+.rcount{display:flex;font-size:13px;color:var(--ink2);font-weight:600}.rcount span{flex:1;text-align:left;padding-left:6px}
+.meter{position:relative;height:22px;border-radius:99px;background:var(--soft);margin:12px 0 4px}
+.meter .band{position:absolute;top:0;bottom:0;background:#CDEFE0;border-radius:99px}
+.meter i{position:absolute;top:-4px;width:6px;height:30px;border-radius:3px;background:var(--coral);left:-10px;transition:left .15s}
+.dynmark{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-weight:800;font-size:40px}
+.chordrow{display:flex;justify-content:center;gap:8px;margin-top:14px;flex-wrap:wrap}.chordrow span{padding:8px 12px;border-radius:12px;border:2px solid var(--line);font-weight:700;min-width:30px}.chordrow span.on{border-color:var(--coral);background:#FFF0EA}
+.stagecard.open{cursor:pointer}.stagecard.open .lock{font-size:26px;color:var(--ink)}
+.cols{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;align-items:center}
+.circle5 text{font-weight:700}
+.rhy.hid .rn,.rhy.hid .rr{border:2px dashed var(--line);background:transparent}
+.letters{display:grid!important;grid-template-columns:repeat(4,1fr)}
 </style>
 </head>
 <body>
@@ -484,7 +514,10 @@ function nudgeTarget(){
   if(li) return [li, "Tap each one to hear it."];
   const rng = S.querySelector("input[type=range]");
   if(rng) return [rng.closest(".bars") || rng, rng.classList.contains("vbar") ? "Drag a few bars up." : "Drag the slider."];
+  const q = S.querySelector("[data-q]:not(.right):not(.wrong)"); if(q && !S.querySelector(".choice.right")) return [q.parentElement, "Pick an answer."];
   const btn = [...S.querySelectorAll("#go, #ls, #tap, #str")].find(b => !b.disabled);
+  if(keys && S.querySelector(".prompt")) return [kbEl, "Play the key the card asks for."];
+  if(keys && S.querySelector(".tok.cur") && !hints.size) return [S.querySelector(".tok.cur"), "Play this note on the keyboard."];
   if(btn) return [btn, btn.id === "str" ? "Tap the string." : (btn.id === "tap" ? "Tap the button 4 times." : `Tap ${btn.textContent.trim()}.`)];
   if(keys) return hints.size ? [null, "Play the lit key below."] : [kbEl, "Play any key below."];
   const ch = S.querySelector(".choices:not(.hidden) .choice:not(.right):not(.wrong), #ch .choice");
@@ -1301,7 +1334,7 @@ function drill(cfg){
     <p>${cfg.line}</p>
     <div class="card"><div class="row" style="justify-content:space-between"><span class="big" id="rd">1 / ${rounds.length}</span><span class="muted" id="sc">0 right</span></div>
       <div class="row" style="justify-content:center;margin-top:12px"><button class="btn ghost" id="again">Hear again</button></div></div>
-    <div class="choices" style="display:grid;grid-template-columns:repeat(${labels.length},1fr)">${labels.map((l, i) => `<button class="choice" data-c="${i}">${l}</button>`).join("")}</div>
+    <div class="choices" style="display:grid;grid-template-columns:repeat(${Math.min(4, labels.length)},1fr)">${labels.map((l, i) => `<button class="choice" data-c="${i}">${l}</button>`).join("")}</div>
     ${refs ? `<p class="muted" style="margin-top:10px;font-size:15px">Compare: ${refs.map((x, i) => `<button class="linkbtn" data-ref="${i}">${x[0]}</button>`).join(" · ")}</p>` : ""}
     <div class="feedback" id="fb"></div>
     ${footer("Continue", false)}`); wireFooter();
@@ -1692,7 +1725,7 @@ const L19 = [
       $("#again").onclick = () => r < items.length && cur.play();
       setTimeout(next, 500); this.cleanup = tAllOff;
   }},
-  { render(){ lessonSummary("1.9", "Stage 1 complete!", res19, ["Ears hear jumps by ×, not +", "Your brain can fill in a missing note", "You can hear pitch, beating, loudness and timbre"], null); }},
+  { render(){ lessonSummary("1.9", "Stage 1 complete!", res19, ["Ears hear jumps by ×, not +", "Your brain can fill in a missing note", "You can hear pitch, beating, loudness and timbre"], "2.1"); }},
 ];
 
 const LESSONS = { "1.1": L11, "1.2": L12, "1.3": L13, "1.4": L14, "1.5": L15, "1.6": L16, "1.7": L17, "1.8": L18, "1.9": L19 };
@@ -1705,7 +1738,7 @@ function go(i){
   idx = i; current = screens[i];
   document.getElementById("bar").style.width = (i / (screens.length - 1) * 100) + "%";
   document.getElementById("scrno").textContent = `${lessonId}.${i + 1}`;
-  document.body.classList.toggle("keys", !!current.keys);
+  document.body.classList.toggle("keys", !!current.keys); document.body.classList.toggle("labels", !!current.labels); document.body.classList.toggle("labels2", current.labels === "all");
   current.render(); window.scrollTo(0, 0); askUnlock();
   pushNav({ v: "lesson", id: lessonId, i });
 }
@@ -1730,6 +1763,1366 @@ const STAGE1 = [["1.1","What sound is"],["1.2","From beats to notes"],["1.3","Fr
 const READY = new Set(Object.keys(LESSONS));
 const STAGES = [["2","Foundations",8],["3","Rhythm and reading",10],["4","Scales and keys",9],["5","Intervals and ear",7],["6","Chords and harmony",9],["7","Technique and dynamics",8],["8","Applied",7],["9","Advanced",7]];
 const LOCK = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+const NEWL = {};
+// ===================== Engine for Stages 2–9 =====================
+// Screens are built by small factories (S.*) so each lesson reads like a script.
+
+// ---- names and helpers ----
+const LETTERS = ["C","D","E","F","G","A","B"];
+const WHITE_PC = [0,2,4,5,7,9,11];
+const pc = n => ((n % 12) + 12) % 12;
+const SHARP = ["C","C♯","D","D♯","E","F","F♯","G","G♯","A","A♯","B"];
+const FLAT  = ["C","D♭","D","E♭","E","F","G♭","G","A♭","A","B♭","B"];
+const nm = (n, flat) => (flat ? FLAT : SHARP)[pc(n)];
+const nmo = n => nm(n) + (Math.floor(n / 12) - 1);
+const rnd = a => a[Math.floor(Math.random() * a.length)];
+const range = (a, b) => { const r = []; for(let i = a; i <= b; i++) r.push(i); return r; };
+// scales and chords as semitone steps
+const MAJOR = [0,2,4,5,7,9,11], NAT_MIN = [0,2,3,5,7,8,10], HARM_MIN = [0,2,3,5,7,8,11], MEL_MIN = [0,2,3,5,7,9,11];
+const PENTA = [0,2,4,7,9], MIN_PENTA = [0,3,5,7,10], BLUES = [0,3,5,6,7,10];
+const scaleNotes = (root, steps, oct = 1) => { const r = []; for(let o = 0; o < oct; o++) steps.forEach(s => r.push(root + 12 * o + s)); r.push(root + 12 * oct); return r; };
+const TRIAD = { maj: [0,4,7], min: [0,3,7], dim: [0,3,6], aug: [0,4,8] };
+const SEVENTH = { maj7: [0,4,7,11], "7": [0,4,7,10], m7: [0,3,7,10], "m7♭5": [0,3,6,10], dim7: [0,3,6,9] };
+// key → preferred spelling (flat keys use flats)
+const FLAT_KEYS = new Set([5, 10, 3, 8, 1, 6]);
+
+// ---- keyboard: labels, range, velocity by tap height ----
+function setKeyLabels(){
+  keyEls.forEach((el, n) => { let s = el.querySelector(".lbl"); if(!s){ s = document.createElement("span"); s.className = "lbl"; el.appendChild(s); }
+    s.textContent = isBlack(n) ? SHARP[pc(n)].replace("♯", "♯") : LETTERS[WHITE_PC.indexOf(pc(n))]; el.classList.toggle("mid", n === 60); });
+}
+const _buildKeyboard = buildKeyboard;
+buildKeyboard = function(){ _buildKeyboard(); setKeyLabels(); };
+function fitKeys(lo, hi){
+  if(lo >= base && hi <= base + 24) return;
+  let b = lo - pc(lo); if(hi > b + 24) b = Math.max(24, hi - 24 - pc(hi - 24));
+  base = Math.max(24, Math.min(84, b)); buildKeyboard();
+}
+// on-screen keys: tap lower on a key to play louder (like pressing harder)
+let lastTapVel = 0.7;
+kbEl.addEventListener("pointerdown", e => {
+  const t = e.target.closest("[data-n]"); if(!t) return;
+  const r = t.getBoundingClientRect(); lastTapVel = Math.max(0.12, Math.min(1, 0.15 + 0.95 * (e.clientY - r.top) / r.height));
+}, true);
+const _press = press;
+press = function(n, vel){ if(vel === undefined) vel = lastTapVel; _press(n, vel); };
+
+
+// ---- metronome (scheduled on the audio clock) ----
+let tickBufs = null;
+function makeTick(f){ const c = audio(), sr = c.sampleRate, len = Math.floor(sr * 0.05), b = c.createBuffer(1, len, sr), d = b.getChannelData(0);
+  for(let i = 0; i < len; i++){ const t = i / sr; d[i] = Math.min(1, t / 0.001) * (0.7 * Math.exp(-t / 0.011) * Math.sin(2 * Math.PI * f * t) + 0.3 * Math.exp(-t / 0.005) * Math.sin(2 * Math.PI * f * 2.5 * t)); }
+  return b; }
+function tick(accent, when){ const c = audio(); if(!tickBufs) tickBufs = [makeTick(1150), makeTick(1700)];
+  const s = c.createBufferSource(); s.buffer = tickBufs[accent ? 1 : 0]; const g = c.createGain(); g.gain.value = accent ? 0.9 : 0.6;
+  s.connect(g); g.connect(master); s.start(Math.max(when, c.currentTime)); }
+const metros = new Set();
+function metro(bpm, o = {}){
+  const c = audio(), spb = 60 / bpm, beats = o.beats || 4; let next = c.currentTime + 0.15, beat = 0; const t0 = next;
+  const timers = [];
+  const iv = setInterval(() => {
+    while(next < c.currentTime + 0.2){
+      if(o.total && beat >= o.total){ clearInterval(iv); break; }
+      if(!o.silent) tick(beat % beats === 0, next);
+      const b = beat, at = next; o.onSched?.(b, at);
+      timers.push(setTimeout(() => o.onBeat?.(b, at), Math.max(0, (at - c.currentTime) * 1000)));
+      beat++; next += spb;
+    }
+  }, 25);
+  const m = { t0, spb, stop(){ clearInterval(iv); timers.forEach(clearTimeout); metros.delete(m); } };
+  metros.add(m); return m;
+}
+const stopMetros = () => [...metros].forEach(m => m.stop());
+const later = [];
+function after(ms, fn){ const t = setTimeout(fn, ms); later.push(t); return t; }
+const clearLater = () => { later.forEach(clearTimeout); later.length = 0; };
+// play a list of notes [{n|ns, at (beats), d (beats)}] at bpm, from the audio clock
+function playSeq(items, bpm = 90, vel = 0.7){
+  const spb = 60 / bpm;
+  items.forEach(it => { const ns = it.ns || [it.n];
+    after(it.at * spb * 1000, () => { ns.forEach(n => { noteOnSound(n, it.v || vel); keyEls.get(n)?.classList.add("demo"); });
+      after(Math.max(0.15, (it.d || 1) * spb * 0.92) * 1000, () => ns.forEach(n => { noteOffSound(n); keyEls.get(n)?.classList.remove("demo"); })); }); });
+  return items.reduce((m, it) => Math.max(m, it.at + (it.d || 1)), 0) * spb * 1000;
+}
+const melody = (ns, d = 1) => ns.map((n, i) => ({ n, at: i * d, d }));
+
+// ---- notation (VexFlow, loaded once) ----
+let vfReady = null;
+function loadVF(){ if(window.Vex) return Promise.resolve(); if(vfReady) return vfReady;
+  vfReady = new Promise((ok, no) => { const s = document.createElement("script"); s.src = "vexflow.js"; s.onload = ok; s.onerror = no; document.head.appendChild(s); }); return vfReady; }
+const vfKey = (n, flat) => { const s = nm(n, flat); return s[0].toLowerCase() + (s[1] === "♯" ? "#" : s[1] === "♭" ? "b" : "") + "/" + (Math.floor(n / 12) - 1); };
+// notes: [{ns:[midi]|n, d:"q"|"h"|"w"|"8"|"16", dot, rest, hl, tie}] ; opts: clef, key, time, width, flat, keyNat
+function drawStaff(el, o){
+  return loadVF().then(() => {
+    const VF = Vex.Flow; el.innerHTML = "";
+    const W = Math.min(o.width || 600, Math.max(260, el.clientWidth || 320));
+    const r = new VF.Renderer(el, VF.Renderer.Backends.SVG); const grand = !!o.grand;
+    const sc = o.scale || (grand ? 0.78 : 1);
+    r.resize(W, grand ? 196 : (o.h || 140)); const c = r.getContext(); c.scale(sc, sc);
+    const mk = (clef, y) => { const st = new VF.Stave(6, y, W / sc - 12); st.addClef(clef); if(o.key) st.addKeySignature(o.key); if(o.time) st.addTimeSignature(o.time); st.setContext(c).draw(); return st; };
+    const keyAcc = o.key ? new Set(keySigPcs(o.key)) : new Set();
+    const build = (list, clef) => list.map(x => {
+      const ns = x.ns || (x.n !== undefined ? [x.n] : []);
+      const keys = x.rest || !ns.length ? [clef === "bass" ? "d/3" : "b/4"] : ns.map(n => vfKey(n, o.flat));
+      const sn = new VF.StaveNote({ clef, keys, duration: x.d + (x.rest || !ns.length ? "r" : ""), auto_stem: true });
+      if(!x.rest) ns.forEach((n, i) => { const s = nm(n, o.flat); if(s.length > 1 && !keyAcc.has(pc(n))) sn.addModifier(new VF.Accidental(s[1] === "♯" ? "#" : "b"), i);
+        else if(s.length === 1 && o.key && keyAccNat(o.key, n)) sn.addModifier(new VF.Accidental("n"), i); });
+      if(x.dot) VF.Dot.buildAndAttach([sn], { all: true });
+      if(x.hl) sn.setStyle({ fillStyle: "#FF6A3D", strokeStyle: "#FF6A3D" });
+      if(x.ok) sn.setStyle({ fillStyle: "#20A66A", strokeStyle: "#20A66A" });
+      if(x.dyn) sn.addModifier(new VF.Annotation(x.dyn).setFont("Times", 15, "bold italic").setVerticalJustification(VF.Annotation.VerticalJustify.BOTTOM), 0);
+      if(x.txt) sn.addModifier(new VF.Annotation(x.txt).setFont("Inter, Arial", 13, "bold").setVerticalJustification(VF.Annotation.VerticalJustify.TOP), 0);
+      return sn; });
+    const fmt = (st, list, clef) => { if(!list || !list.length) return []; const notes = build(list, clef);
+      const beams = VF.Beam.generateBeams(notes.filter(n => !n.isRest()), { groups: o.time === "3/4" ? [new VF.Fraction(3, 8)] : undefined });
+      const voice = new VF.Voice({ num_beats: 4, beat_value: 4 }).setMode(VF.Voice.Mode.SOFT).addTickables(notes);
+      new VF.Formatter().joinVoices([voice]).format([voice], st.getNoteEndX() - st.getNoteStartX() - 14);
+      voice.draw(c, st); beams.forEach(b => b.setContext(c).draw());
+      if(o.ties) o.ties.forEach(([a, b]) => new VF.StaveTie({ first_note: notes[a], last_note: notes[b], first_indices: [0], last_indices: [0] }).setContext(c).draw());
+      if(o.bars) o.bars.forEach(i => { const x = (notes[i].getAbsoluteX() + notes[i - 1].getAbsoluteX()) / 2 + 6; c.beginPath(); c.moveTo(x, st.getYForLine(0)); c.lineTo(x, st.getYForLine(4)); c.stroke(); });
+      return notes; };
+    if(grand){ const t = mk("treble", 20), b = mk("bass", 130);
+      new VF.StaveConnector(t, b).setType("brace").setContext(c).draw(); new VF.StaveConnector(t, b).setType("singleLeft").setContext(c).draw();
+      // keep the two voices aligned: pad shorter list
+      fmt(t, o.notes, "treble"); fmt(b, o.bass, "bass");
+    } else { const st = mk(o.clef || "treble", o.y || 20); fmt(st, o.notes, o.clef || "treble"); }
+    el.querySelector("svg")?.setAttribute("role", "img");
+  });
+}
+const SHARP_ORDER = [6, 1, 8, 3, 10, 5, 0], FLAT_ORDER = [10, 3, 8, 1, 6, 11, 4];
+const KEYSIG = { C: 0, G: 1, D: 2, A: 3, E: 4, B: 5, "F#": 6, F: -1, Bb: -2, Eb: -3, Ab: -4, Db: -5, Gb: -6, Am: 0, Em: 1, Bm: 2, Dm: -1, Gm: -2, Cm: -3 };
+function keySigPcs(k){ const v = KEYSIG[k] || 0; return v > 0 ? SHARP_ORDER.slice(0, v) : FLAT_ORDER.slice(0, -v); }
+function keyAccNat(k, n){ const v = KEYSIG[k] || 0; const set = v > 0 ? SHARP_ORDER.slice(0, v).map(p => pc(p - 1)) : FLAT_ORDER.slice(0, -v).map(p => pc(p + 1)); return set.includes(pc(n)); }
+
+// ---- results per lesson ----
+const RES = {};
+function score(right, rounds){ const r = RES[lessonId] || (RES[lessonId] = { right: 0, rounds: 0 }); r.right += right; r.rounds += rounds; }
+const fb = (cls, msg) => { const f = $("#fb"); if(f){ f.className = "feedback " + cls; f.textContent = msg; } };
+
+// ---- hand picture with finger numbers ----
+function handSvg(side = "R", hl = [], size = 150){
+  const xs = side === "R" ? [18, 48, 78, 108, 136] : [136, 106, 76, 46, 18], tops = [70, 22, 12, 20, 38], ws = [26, 24, 24, 24, 22];
+  const f = xs.map((x, i) => `<rect x="${x}" y="${tops[i]}" width="${ws[i]}" height="${(i ? 120 : 90) - tops[i] + 20}" rx="12" fill="${hl.includes(i + 1) ? "#FF6A3D" : "var(--soft)"}" stroke="var(--line)" stroke-width="2"/><text x="${x + ws[i] / 2}" y="${tops[i] + 22}" text-anchor="middle" font-size="16" font-weight="700" fill="${hl.includes(i + 1) ? "#fff" : "var(--ink)"}">${i + 1}</text>`).join("");
+  return `<svg viewBox="0 0 180 190" width="${size}" height="${Math.round(size * 1.05)}" aria-label="${side === "R" ? "Right" : "Left"} hand">${f}<rect x="${side === "R" ? 40 : 14}" y="100" width="126" height="80" rx="30" fill="var(--soft)" stroke="var(--line)" stroke-width="2"/></svg>`;
+}
+
+// ===================== screen factories =====================
+const S = {};
+const kick = k => k ? `<div class="kicker">${k}</div>` : "";
+S.intro = (stage, title, line) => ({ render(){ RES[lessonId] = null;
+  h(`<div class="kicker">Stage ${stage} · ${COURSE[stage - 1].title}</div><h1>${title}</h1><p>${line}</p>${footer("Start")}`); wireFooter(); } });
+// a concept screen: heading, one line, optional picture/staff/keys to look at
+S.info = (title, line, o = {}) => ({ keys: !!o.keys, labels: o.labels, render(){
+  h(`${kick(o.kicker)}<h1>${title}</h1>${line ? `<p>${line}</p>` : ""}${o.html || ""}${o.staff ? `<div class="staff" id="stf"></div>` : ""}${o.play ? `<div class="row" style="justify-content:center;margin-top:8px"><button class="btn ghost" id="hear">${o.playLabel || "Hear it"}</button></div>` : ""}${footer(o.next || "Continue")}`); wireFooter();
+  if(o.keys) fitKeys(...(o.fit || [48, 72]));
+  if(o.hints) setHints(typeof o.hints === "function" ? o.hints() : o.hints);
+  if(o.staff) drawStaff($("#stf"), o.staff);
+  if(o.play) $("#hear").onclick = () => { clearLater(); o.play(); };
+  o.after?.call(this);
+  this.cleanup = () => { setHints([]); clearLater(); stopMetros(); tAllOff?.(); };
+} });
+// multiple choice; opts: [label, ...]; ans index (or fn(i)); o.play = sound to hear first; o.staff
+S.quiz = (title, opts, ans, good, bad = "Not quite. Try again.", o = {}) => ({ keys: !!o.keys, labels: o.labels, render(){
+  h(`${kick(o.kicker)}<h1>${title}</h1>${o.line ? `<p>${o.line}</p>` : ""}${o.staff ? `<div class="staff" id="stf"></div>` : ""}${o.html || ""}
+    ${o.play ? `<div class="row" style="justify-content:center;margin:4px 0 14px"><button class="btn ghost" id="hear">Hear it</button></div>` : ""}
+    <div class="choices" ${opts.length > 3 || o.grid ? `style="display:grid;grid-template-columns:1fr 1fr"` : ""}>${opts.map((x, i) => `<button class="choice" data-q="${i}">${x}</button>`).join("")}</div>
+    <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+  if(o.staff) drawStaff($("#stf"), o.staff);
+  if(o.hints) setHints(o.hints);
+  if(o.play){ $("#hear").onclick = () => { clearLater(); o.play(); }; after(400, o.play); }
+  let first = true;
+  screenEl.querySelectorAll("[data-q]").forEach(b => b.onclick = () => {
+    if(+b.dataset.q === ans){ b.classList.add("right"); fb("good", good); if(first) score(1, 1); else score(0, 1); first = null; o.onRight?.(); enableNext(); }
+    else if(first !== null){ b.classList.add("wrong"); first = false; fb("bad", bad); }
+  });
+  this.cleanup = () => { setHints([]); clearLater(); };
+} });
+// tap each to hear; items: [[label, fn]]
+S.listen = (title, line, items, done, o = {}) => ({ keys: !!o.keys, labels: o.labels, render(){
+  h(`${kick(o.kicker)}<h1>${title}</h1><p>${line}</p>${o.html || ""}<div class="choices">${items.map((x, i) => `<button class="choice" data-li="${i}">${x[0]}</button>`).join("")}</div>
+    <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+  if(o.keys) fitKeys(...(o.fit || [48, 72]));
+  listenRow(items.map(x => () => { clearLater(); tAllOff(); x[1](); }), () => { fb("good", done); enableNext(); });
+  this.cleanup = () => { clearLater(); tAllOff(); setHints([]); };
+} });
+// play a sequence of keys in order. o: seq, names (show name tokens), fingers, lights (true|false), demo, bpm, backing {i: notes}, pc (any octave)
+S.follow = (title, line, o) => ({ keys: true, labels: o.labels, render(){
+  const seq = o.seq, toks = o.fingers || (o.names ? seq.map(n => nm(n, o.flat)) : null); let k = 0, miss = 0;
+  h(`${kick(o.kicker)}<h1>${title}</h1><p>${line}</p>
+    ${toks ? `<div class="toks">${toks.map((t, i) => `<span class="tok" data-t="${i}">${t}</span>`).join("")}</div>` : o.staff ? "" : `<div class="card" style="text-align:center;padding:12px"><span class="big" id="ct">0 / ${seq.length}</span></div>`}
+    ${o.staff ? `<div class="staff" id="stf"></div>` : ""}
+    ${o.demo ? `<div class="row" style="justify-content:center;margin-top:10px"><button class="btn ghost" id="hear">Hear it</button></div>` : ""}
+    <div class="feedback" id="fb"></div>${footer(o.next || "Continue", false)}`); wireFooter();
+  fitKeys(Math.min(...seq, ...(o.fitExtra || [])), Math.max(...seq, ...(o.fitExtra || [])));
+  const mark = l => l && l.map((x, i) => x.rest ? x : ({ ...x, hl: i === k, ok: i < k }));
+  const drawS = () => o.staff && drawStaff($("#stf"), { ...o.staff, notes: mark(o.staff.notes), bass: mark(o.staff.bass) });
+  const show = () => { screenEl.querySelectorAll(".tok").forEach((t, i) => { t.classList.toggle("cur", i === k); t.classList.toggle("done", i < k); });
+    if($("#ct")) $("#ct").textContent = `${k} / ${seq.length}`; setHints(o.lights === false && miss < 2 ? [] : k < seq.length ? [seq[k]] : []); drawS(); };
+  if(o.demo) $("#hear").onclick = () => { clearLater(); playSeq(melody(seq, o.demoBeat || 1), o.bpm || 100); };
+  show();
+  const match = n => o.pc ? pc(n) === pc(seq[k]) : n === seq[k];
+  this.onNote = n => { if(k >= seq.length) return;
+    if(match(n)){ flash(n, "ok"); if(o.beat && !this.m) this.m = metro(o.beat); if(o.backing && o.backing[k]) o.backing[k].forEach(b => playNote(b, o.backDur || 1.2)); if(o.backMel && o.backMel[k]) playSeq(melody(o.backMel[k], o.backBeat || 0.5), o.bpm || 100); k++; miss = 0; fb("", "");
+      if(k >= seq.length){ show(); setHints([]); this.m?.stop(); this.m = null; fb("good", o.done || "Nice."); score(1, 1); enableNext(); o.onDone?.(); } else show(); }
+    else { flash(n, "no"); miss++; if(miss === 2 && o.lights === false) show(); fb("bad", o.missMsg ? o.missMsg(seq[k], n) : (miss >= 2 && o.lights === false ? "It's the lit key." : "Not that one.")); }
+  };
+  this.cleanup = () => { setHints([]); clearLater(); this.m?.stop(); this.m = null; };
+  this.auto = () => { if(k < seq.length){ const n = seq[k]; press(n); release(n); } };
+} });
+// scored "find it" practice. make() → {prompt, ok(n), show:[notes to light after misses], play?, lit?:[]}
+S.find = o => ({ keys: true, labels: o.labels, render(){
+  const N = o.rounds || 6; let r = 0, right = 0, first = true, miss = 0, cur, t0, times = [];
+  h(`<div class="kicker">${o.kicker || "Practice"}</div><h1>${o.title}</h1><p>${o.line}</p>
+    <div class="card"><div class="row" style="justify-content:space-between"><span class="muted" id="rd">1 / ${N}</span><span class="muted" id="sc">0 right</span></div>
+    <div class="prompt" id="pr"></div>${o.staff ? `<div class="staff" id="stf"></div>` : ""}
+    ${o.hear ? `<div class="row" style="justify-content:center"><button class="btn ghost" id="hear">Hear again</button></div>` : ""}</div>
+    <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+  fitKeys(...(o.fit || [48, 72]));
+  const next = () => {
+    if(r >= N){ setHints([]); $("#pr").textContent = "Done!"; const avg = times.length ? (times.reduce((a, b) => a + b, 0) / times.length / 1000).toFixed(1) : null;
+      fb("good", `${right} of ${N} first try${o.timed && avg ? `, ${avg} s each` : ""}.`); score(right, N); enableNext(); return; }
+    cur = o.make(r); first = true; miss = 0; $("#rd").textContent = `${r + 1} / ${N}`; $("#pr").innerHTML = cur.prompt || ""; fb("", "");
+    setHints(cur.lit || []); if(cur.staff) drawStaff($("#stf"), cur.staff); if(cur.play) after(250, cur.play); t0 = performance.now(); cur.got = new Set();
+  };
+  if(o.hear) $("#hear").onclick = () => cur?.play?.();
+  this.onNote = (n, v) => { if(r >= N || !cur) return;
+    if(cur.seq){ if(cur.i === undefined) cur.i = 0; if(n === cur.seq[cur.i]){ cur.i++; setHints([]); if(cur.i < cur.seq.length){ flash(n, "ok"); return; } } else { flash(n, "no"); first = false; miss++; cur.i = 0; fb("bad", cur.bad ? cur.bad(n) : "Not that one. Start again from the first note."); setHints(miss >= 2 ? [cur.seq[0], ...(cur.show || [])] : cur.lit || []); return; } }
+    const res = cur.seq ? true : cur.ok(n, v, cur);
+    if(res === "part"){ flash(n, "ok"); return; }
+    if(res){ flash(n, "ok"); if(first) right++; times.push(performance.now() - t0); $("#sc").textContent = `${right} right`; fb("good", cur.good || "Yes!"); r++; cur.after?.(); after(o.gap || 900, next); cur = null; }
+    else { flash(n, "no"); first = false; miss++; fb("bad", cur.bad ? cur.bad(n, v) : "Not that one."); if(miss >= 2 && cur.show) setHints([...(cur.lit || []), ...cur.show]); }
+  };
+  after(400, next);
+  this.auto = () => { if(!cur) return; const c = cur; if(c.seq){ const n = c.seq[c.i || 0]; press(n); release(n); return; } for(let n = 30; n < 100; n++){ const v = c.vel || 0.7; let ok; try { ok = c.ok(n, v, { ...c, got: new Set(c.got) }); } catch(e){ ok = false; } if(ok && !(c.got && c.got.has(n))){ press(n, v); release(n); return; } } };
+  this.cleanup = () => { setHints([]); clearLater(); };
+} });
+// build a set of notes (chord) in any order, one at a time is fine. make() → {prompt, notes:[...], pc?}
+S.build = o => ({ keys: true, labels: o.labels, render(){
+  const N = o.rounds || 4; let r = 0, right = 0, first = true, cur, got;
+  h(`<div class="kicker">${o.kicker || "Practice"}</div><h1>${o.title}</h1><p>${o.line || "Play its keys, one at a time is fine."}</p>
+    <div class="card"><div class="row" style="justify-content:space-between"><span class="muted" id="rd">1 / ${N}</span><span class="muted" id="sc">0 right</span></div><div class="prompt" id="pr"></div>${o.staff ? `<div class="staff" id="stf"></div>` : ""}</div>
+    <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+  fitKeys(...(o.fit || [48, 72]));
+  const next = () => { keyEls.forEach(e => e.classList.remove("got"));
+    if(r >= N){ setHints([]); $("#pr").textContent = "Done!"; fb("good", `${right} of ${N} first try.`); score(right, N); enableNext(); return; }
+    cur = o.make(r); got = new Set(); first = true; $("#rd").textContent = `${r + 1} / ${N}`; $("#pr").innerHTML = cur.prompt; fb("", ""); setHints(cur.lit || []); if(cur.staff) drawStaff($("#stf"), cur.staff); if(cur.play) after(300, cur.play); };
+  if(o.hear) screenEl.querySelector(".card").insertAdjacentHTML("beforeend", `<div class="row" style="justify-content:center"><button class="btn ghost" id="hear">Hear again</button></div>`);
+  if(o.hear) $("#hear").onclick = () => cur?.play?.();
+  const want = n => cur.pc ? cur.notes.some(x => pc(x) === pc(n)) : cur.notes.includes(n);
+  this.onNote = n => { if(!cur || r >= N) return;
+    if(want(n)){ got.add(cur.pc ? pc(n) : n); keyEls.get(n)?.classList.add("got");
+      if(got.size >= cur.notes.length){ const ns = cur.notes; after(150, () => chord(ns, 1.4)); if(first) right++; $("#sc").textContent = `${right} right`; fb("good", cur.good || "Yes!"); r++; cur = null; after(1700, next); } }
+    else { flash(n, "no"); first = false; fb("bad", cur.bad || "That key isn't in it."); if(cur.show) setHints(cur.show); }
+  };
+  after(300, next);
+  this.auto = () => { if(!cur) return; const n = cur.notes.find(x => !got.has(cur.pc ? pc(x) : x)); if(n !== undefined){ press(n); release(n); } };
+  this.cleanup = () => { setHints([]); clearLater(); keyEls.forEach(e => e.classList.remove("got")); };
+} });
+// hear a phrase, play it back. make() → notes (exact) ; o.pc for any octave
+S.echo = o => ({ keys: true, labels: o.labels, render(){
+  const N = o.rounds || 5; let r = 0, right = 0, first = true, cur, k = 0, busy = false;
+  h(`<div class="kicker">${o.kicker || "Practice"}</div><h1>${o.title}</h1><p>${o.line}</p>
+    <div class="card"><div class="row" style="justify-content:space-between"><span class="muted" id="rd">1 / ${N}</span><span class="muted" id="sc">0 right</span></div>
+    <div class="dots" id="dots"></div><div class="row" style="justify-content:center"><button class="btn ghost" id="hear">Hear again</button></div></div>
+    <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+  fitKeys(...(o.fit || [48, 72]));
+  const dots = () => $("#dots").innerHTML = cur ? cur.map((_, i) => `<i class="${i < k ? "on" : ""}"></i>`).join("") : "";
+  const hear = () => { if(!cur) return; busy = true; clearLater(); const ms = cur.ns ? playSeq(cur.ns, o.bpm || 100) : playSeq(cur.map((n, i) => ({ n, at: i * (o.beat || 0.75), d: o.beat || 0.75 })), o.bpm || 100); after(ms, () => busy = false); };
+  const next = () => { if(r >= N){ setHints([]); fb("good", `${right} of ${N} first try.`); score(right, N); enableNext(); cur = null; return; }
+    cur = o.make(r); k = 0; first = true; $("#rd").textContent = `${r + 1} / ${N}`; fb("", ""); dots(); setHints(o.showFirst ? [cur.ns ? cur.ns[0].n : cur[0]] : []); hear(); };
+  $("#hear").onclick = () => { k = 0; dots(); hear(); };
+  this.onNote = n => { if(!cur) return; const seq = cur.ns ? cur.ns.map(x => x.n) : cur; setHints([]);
+    if(o.pc ? pc(n) === pc(seq[k]) : n === seq[k]){ k++; dots(); if(k >= seq.length){ if(first) right++; $("#sc").textContent = `${right} right`; fb("good", "Yes!"); r++; cur = null; after(1200, next); } }
+    else { flash(n, "no"); first = false; k = 0; dots(); fb("bad", o.wrongMsg || "Not quite. Listen and try again from the start."); }
+  };
+  after(500, next);
+  this.auto = () => { if(!cur) return; const seq = cur.ns ? cur.ns.map(x => x.n) : cur; const n = seq[k]; press(n); release(n); };
+  this.cleanup = () => { setHints([]); clearLater(); };
+} });
+// ear drill wrapper (from 1.5): rounds [{play, answer}], labels
+S.ear = o => ({ keys: !!o.keys, render(){ drill({ title: o.title, line: o.line || "Listen, then pick.", labels: o.labels, refs: o.refs,
+  rounds: (typeof o.rounds === "function" ? o.rounds() : o.rounds), onDone: s => score(s.right, s.rounds) }); if(o.kicker) $(".kicker").textContent = o.kicker; this.cleanup = () => { tAllOff(); clearLater(); }; } });
+// rhythm on any key with a metronome. pattern: durations in beats (negative = rest). o: bpm, beats, holds (score let-go), notes (staff instead of blocks)
+S.rhythm = o => ({ keys: true, labels: o.labels, render(){
+  const bpm = o.bpm || 80, beats = o.beats || 4, pat = o.pattern; const total = pat.reduce((a, b) => a + Math.abs(b), 0);
+  const ons = []; let t = 0; pat.forEach(d => { if(d > 0) ons.push({ at: t, d }); t += Math.abs(d); });
+  h(`${kick(o.kicker)}<h1>${o.title}</h1><p>${o.line}</p>
+    ${o.staff ? `<div class="staff" id="stf"></div>` : ""}${o.staff && o.blocks === false ? `<div class="rhy" id="rhy" style="height:10px;opacity:.0001">${pat.map(d => `<span class="${d > 0 ? "rn" : "rr"}" style="flex:${Math.abs(d)}"></span>`).join("")}<i id="ph"></i></div>` : `<div class="rhy ${o.hidden ? "hid" : ""}" id="rhy">${pat.map((d, i) => `<span class="${d > 0 ? "rn" : "rr"}" style="flex:${Math.abs(d)}"></span>`).join("")}<i id="ph"></i></div>
+    <div class="rcount">${range(1, Math.ceil(total)).map(i => `<span>${((i - 1) % beats) + 1}</span>`).join("")}</div>`}
+    <div class="row" style="justify-content:center;margin-top:12px;gap:10px"><button class="btn ghost" id="hear">Hear it</button><button class="btn" id="go">Start</button></div>
+    <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+  fitKeys(48, 72); const K = o.key || 60; setHints([K]);
+  if(o.staff) drawStaff($("#stf"), o.staff);
+  let run = null, presses = [], m = null, raf = 0;
+  const blocks = () => [...screenEl.querySelectorAll(".rn")];
+  const stop = () => { m?.stop(); cancelAnimationFrame(raf); run = null; };
+  const anim = (start) => { const ph = $("#ph"); const spb = 60 / bpm; const loop = () => { const x = (ctx.currentTime - start) / spb / total; if(ph){ ph.style.left = Math.max(0, Math.min(1, x)) * 100 + "%"; ph.style.opacity = x >= 0 && x <= 1 ? 1 : 0; } if(x <= 1.05) raf = requestAnimationFrame(loop); }; loop(); };
+  $("#hear").onclick = () => { stop(); clearLater(); const spb = 60 / bpm; m = metro(bpm, { beats, total: beats + total });
+    const start = m.t0 + beats * spb; after((start - ctx.currentTime) * 1000, () => playSeq(ons.map(x => ({ n: K, at: x.at, d: o.holds ? x.d : Math.min(0.5, x.d) })), bpm)); anim(start); };
+  $("#go").onclick = () => { stop(); clearLater(); presses = []; blocks().forEach(b => b.className = "rn"); fb("", "Count in…");
+    const spb = 60 / bpm; m = metro(bpm, { beats, total: beats + total + 1 }); const start = m.t0 + beats * spb; run = { start, spb }; anim(start);
+    after((start - ctx.currentTime) * 1000, () => fb("", "Go!"));
+    after((start + (total + 0.6) * spb - ctx.currentTime) * 1000, finish); };
+  const finish = () => { if(!run) return; const { start, spb } = run; let hit = 0, holdOk = 0; const used = new Set();
+    ons.forEach((x, i) => { const want = start + x.at * spb; let best = -1, bd = 1;
+      presses.forEach((p, j) => { if(used.has(j)) return; const d = Math.abs(p.t - want); if(d < bd){ bd = d; best = j; } });
+      const ok = best >= 0 && bd < Math.min(0.17, spb * 0.4); const b = blocks()[i];
+      if(ok){ used.add(best); hit++; let good = true; if(o.holds){ const len = (presses[best].off || presses[best].t + 0.05) - presses[best].t; good = len > x.d * spb * 0.6 && len < x.d * spb + 0.35; if(good) holdOk++; }
+        b && (b.className = "rn " + (good ? "hit" : "short")); } else b && (b.className = "rn miss"); });
+    const extra = presses.length - used.size; stop(); $("#rhy")?.classList.remove("hid");
+    const pass = hit / ons.length >= 0.75 && extra <= Math.max(1, ons.length / 4) && (!o.holds || holdOk / ons.length >= 0.6);
+    if(pass){ fb("good", o.holds ? `${hit} of ${ons.length} on time, ${holdOk} held right.` : `${hit} of ${ons.length} on time.`); score(1, 1); enableNext(); $("#go").textContent = "Again"; }
+    else fb("bad", hit < ons.length * 0.75 ? `${hit} of ${ons.length} on time. Try again.` : extra > 0 ? "Some extra presses. Try again." : "Hold each note for its full length. Try again.");
+    $("#go").textContent = "Try again"; if(pass) $("#go").textContent = "Again";
+  };
+  this.onNote = n => { if(!run) return; presses.push({ t: ctx.currentTime, n }); };
+  const offH = n => { if(!run) return; for(let i = presses.length - 1; i >= 0; i--) if(presses[i].n === n && !presses[i].off){ presses[i].off = ctx.currentTime; break; } };
+  releaseHooks.add(offH);
+  this.auto = () => { $("#go").click(); const { start, spb } = run; ons.forEach(x => { after((start + x.at * spb - ctx.currentTime) * 1000, () => press(K)); after((start + (x.at + x.d * 0.85) * spb - ctx.currentTime) * 1000, () => release(K)); }); };
+  this.cleanup = () => { stop(); clearLater(); setHints([]); releaseHooks.delete(offH); };
+} });
+const releaseHooks = new Set();
+const _release = release;
+release = function(n){ releaseHooks.forEach(f => f(n)); _release(n); };
+// loudness targets: rounds [0|1|2] = soft / medium / loud on one key
+const BANDS = [[0, 0.45, "soft", "p"], [0.45, 0.75, "medium", "mf"], [0.75, 1.01, "loud", "f"]];
+S.dyn = o => ({ keys: true, render(){
+  const N = o.rounds.length; let r = 0, right = 0, first = true, busy = false; const K = o.key || 60;
+  h(`<div class="kicker">${o.kicker || "Practice"}</div><h1>${o.title}</h1><p>${o.line || "On screen, tap lower on the key to play louder."}</p>
+    <div class="card"><div class="row" style="justify-content:space-between"><span class="muted" id="rd">1 / ${N}</span><span class="muted" id="sc">0 right</span></div>
+    <div class="prompt" id="pr"></div><div class="meter"><span class="band" id="band"></span><i id="lvl"></i></div></div>
+    <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+  fitKeys(48, 72); setHints([K]);
+  const show = () => { if(r >= N){ $("#pr").textContent = "Done!"; fb("good", `${right} of ${N} first try.`); score(right, N); enableNext(); return; }
+    const b = BANDS[o.rounds[r]]; $("#rd").textContent = `${r + 1} / ${N}`; $("#pr").innerHTML = o.marks ? `<span class="dynmark">${b[3]}</span>` : `Play it <b>${b[2]}</b>`; $("#band").style.left = b[0] * 100 + "%"; $("#band").style.width = (Math.min(1, b[1]) - b[0]) * 100 + "%"; first = true; };
+  this.onNote = (n, v) => { if(r >= N || busy || n !== K) return; $("#lvl").style.left = Math.min(98, v * 100) + "%"; const b = BANDS[o.rounds[r]];
+    if(v >= b[0] && v < b[1]){ if(first) right++; $("#sc").textContent = `${right} right`; fb("good", "Yes!"); r++; busy = true; after(900, () => { busy = false; fb("", ""); show(); }); }
+    else { first = false; fb("bad", v < b[0] ? "Softer than that. Play louder." : "Too loud. Play softer."); } };
+  show(); this.cleanup = () => { setHints([]); clearLater(); };
+  this.auto = () => { if(r >= N || busy) return; const b = BANDS[o.rounds[r]]; press(K, (b[0] + Math.min(1, b[1])) / 2); release(K); };
+} });
+// backing track + free play; counts notes that fit the scale. o: chords [[notes]], beatsPer, bpm, scale (pcs set), root, need (notes)
+S.jam = o => ({ keys: true, labels: o.labels, render(){
+  const bpm = o.bpm || 90, bp = o.beatsPer || 4, need = o.need || 24; let played = 0, inside = 0, onChord = 0, m = null, on = false;
+  h(`${kick(o.kicker || "Play")}<h1>${o.title}</h1><p>${o.line}</p>
+    <div class="card" style="text-align:center"><div class="row" style="justify-content:center"><button class="btn" id="go">Start the band</button></div>
+    <div class="chordrow" id="crow">${o.chords.map((c, i) => `<span data-c="${i}">${o.names ? o.names[i] : ""}</span>`).join("")}</div>
+    <p class="muted" id="st" style="margin:10px 0 0">0 / ${need} notes</p></div>
+    <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+  fitKeys(48, 72); const scale = new Set(o.scale.map(pc)); setHints(range(base, base + 24).filter(n => scale.has(pc(n)) && o.light !== false));
+  let curChord = 0;
+  const start = () => { on = true; $("#go").textContent = "Stop"; m = metro(bpm, { beats: 4, silent: !!o.silent, onBeat: b => { const ci = Math.floor(b / bp) % o.chords.length;
+      if(b % bp === 0){ curChord = ci; screenEl.querySelectorAll("#crow span").forEach((s, i) => s.classList.toggle("on", i === ci)); o.chords[ci].forEach(n => { noteOnSound(n, 0.42); after(bp * 60 / bpm * 900, () => noteOffSound(n)); }); }
+      if(o.bassLine && b % 2 === 0) { const bn = o.chords[ci][0] - 12; noteOnSound(bn, 0.5); after(400, () => noteOffSound(bn)); } } }); };
+  $("#go").onclick = () => { if(on){ on = false; m?.stop(); $("#go").textContent = "Start the band"; } else start(); };
+  this.onNote = n => { if(!on) return; played++; const inS = scale.has(pc(n)); if(inS) inside++; else flash(n, "no");
+    if(o.chords[curChord].some(c => pc(c) === pc(n))) onChord++;
+    $("#st").textContent = `${Math.min(played, need)} / ${need} notes · ${Math.round(inside / played * 100)}% in the scale${o.showChordTones ? ` · ${onChord} on chord notes` : ""}`;
+    if(played >= need){ fb("good", o.done || "Nice playing!"); score(1, 1); enableNext(); } };
+  this.cleanup = () => { m?.stop(); clearLater(); setHints([]); };
+  this.auto = () => { if(!on) start(); const ns = range(base, base + 24).filter(n => scale.has(pc(n))); for(let i = 0; i < need + 2; i++) after(300 + i * 150, () => { const n = rnd(ns); press(n); release(n); }); };
+} });
+// timed evenness: play steady notes along a click, show spread
+S.even = o => ({ keys: true, labels: o.labels, render(){
+  const bpm = o.bpm || 80, sub = o.sub || 1, seq = o.seq; let m = null, run = null, k = 0, devs = [];
+  h(`${kick(o.kicker || "Practice")}<h1>${o.title}</h1><p>${o.line}</p>
+    <div class="card"><canvas id="cv" width="700" height="120" style="background:none"></canvas><p class="muted" id="st" style="text-align:center;margin:6px 0 0">Tap Start, listen to 4 clicks, then play.</p></div>
+    <div class="row" style="justify-content:center;margin-top:10px"><button class="btn" id="go">Start</button></div>
+    <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+  fitKeys(Math.min(...seq), Math.max(...seq));
+  const cv = $("#cv"), g = cv.getContext("2d");
+  const draw = () => { const W = cv.width, H = cv.height; g.clearRect(0, 0, W, H); g.strokeStyle = "#C9C9D6"; g.beginPath(); g.moveTo(0, H / 2); g.lineTo(W, H / 2); g.stroke();
+    devs.forEach((d, i) => { const x = (i + 0.5) / seq.length * W, y = H / 2 - Math.max(-1, Math.min(1, d / 0.12)) * (H / 2 - 8); g.fillStyle = Math.abs(d) < 0.05 ? "#20A66A" : Math.abs(d) < 0.1 ? "#FFB020" : "#E5484D"; g.beginPath(); g.arc(x, y, 6, 0, 7); g.fill(); }); };
+  draw();
+  $("#go").onclick = () => { m?.stop(); devs = []; k = 0; draw(); const spb = 60 / bpm; m = metro(bpm, { beats: 4, total: 4 + Math.ceil(seq.length / sub) + 1 }); run = { start: m.t0 + 4 * spb, step: spb / sub }; setHints([seq[0]]); fb("", ""); };
+  this.onNote = n => { if(!run || k >= seq.length) return; if(n !== seq[k]){ flash(n, "no"); return; }
+    devs.push(ctx.currentTime - (run.start + k * run.step)); k++; draw(); setHints(k < seq.length ? [seq[k]] : []);
+    if(k >= seq.length){ run = null; m?.stop(); const sd = Math.sqrt(devs.reduce((a, d) => a + d * d, 0) / devs.length) * 1000; const ok = sd < (o.limit || 90);
+      $("#st").textContent = `Off the beat by ${Math.round(sd)} ms on average.`; if(ok){ fb("good", sd < 40 ? "Very even!" : "Good and steady."); score(1, 1); enableNext(); } else fb("bad", "A bit uneven. Try again, follow the click."); } };
+  this.cleanup = () => { m?.stop(); setHints([]); };
+  this.auto = () => { $("#go").click(); seq.forEach((n, i) => after((run.start + i * run.step - ctx.currentTime) * 1000, () => { press(n); release(n); })); };
+} });
+S.summary = (id, title, bullets, nextId) => ({ render(){ const r = RES[id]; lessonSummary(id, title, r && r.rounds ? r : null, bullets, nextId); } });
+
+// ===================== course map (all stages) =====================
+const COURSE = [
+  { title: "Sound", lessons: STAGE1 },
+  { title: "Foundations", lessons: [["2.1","The keyboard map"],["2.2","Hands and fingers"],["2.3","Pulse and tempo"],["2.4","Note lengths"],["2.5","Five-finger position"],["2.6","First tunes"],["2.7","Sharps and flats"],["2.8","First hands together"]] },
+  { title: "Rhythm and reading", lessons: [["3.1","Bars and time signatures"],["3.2","Rests"],["3.3","Eighth notes"],["3.4","Dots and ties"],["3.5","Treble clef"],["3.6","Bass clef"],["3.7","Grand staff"],["3.8","Sight-reading"],["3.9","Dynamics"],["3.10","More rhythm"]] },
+  { title: "Scales and keys", lessons: [["4.1","The major scale formula"],["4.2","First scales"],["4.3","Scale degrees"],["4.4","Sharp keys"],["4.5","Flat keys"],["4.6","Circle of fifths"],["4.7","All 12 major scales"],["4.8","Minor keys"],["4.9","Pentatonic and blues"]] },
+  { title: "Intervals and ear", lessons: [["5.1","Interval sizes"],["5.2","Interval qualities"],["5.3","Intervals by ear"],["5.4","Scale degrees by ear"],["5.5","Melodic dictation"],["5.6","Chord quality by ear"],["5.7","Rhythm dictation"]] },
+  { title: "Chords and harmony", lessons: [["6.1","Triads"],["6.2","Inversions"],["6.3","Chords in a key"],["6.4","Common progressions"],["6.5","Minor-key harmony"],["6.6","Seventh chords"],["6.7","Accompaniment patterns"],["6.8","Cadences and function"],["6.9","Harmonizing a melody"]] },
+  { title: "Technique and dynamics", lessons: [["7.1","Finger independence"],["7.2","Scales hands together"],["7.3","Arpeggios"],["7.4","Speed building"],["7.5","Dynamic control"],["7.6","Articulation"],["7.7","Evenness at speed"],["7.8","Voicing"]] },
+  { title: "Applied", lessons: [["8.1","Chord symbols"],["8.2","Melody plus chords"],["8.3","Improvising with pentatonics"],["8.4","The blues"],["8.5","Call and response"],["8.6","Writing your own tune"],["8.7","Playing by ear"]] },
+  { title: "Advanced", lessons: [["9.1","Extended chords"],["9.2","Jazz voicings"],["9.3","Modes"],["9.4","Chromatic harmony"],["9.5","Reharmonization"],["9.6","Advanced rhythm"],["9.7","Sight-reading at speed"]] },
+];
+
+window.keyplayTest = { press: (n, v) => press(n, v === undefined ? 0.7 : v), release: n => release(n) };
+// ---- map: one stage at a time, stage picker below ----
+let mapStage = 1;
+showPath = function(stage){
+  if(typeof stage === "number") mapStage = stage;
+  view("path"); const p = load(); p.stage = mapStage; save(p);
+  const st = COURSE[mapStage - 1];
+  const firstOpen = st.lessons.find(([id]) => READY.has(id) && !p[id]?.done)?.[0];
+  const nodes = st.lessons.map(([id, t]) => {
+    const done = !!p[id]?.done, ready = READY.has(id);
+    const go = id === firstOpen ? `<span class="go"><button class="btn coral">Start</button></span>` : "";
+    return `<li class="node ${done ? "done" : ready ? "open" : ""}" data-id="${ready ? id : ""}"><span class="dotn">${id}</span><span><span class="t">${t}</span>${done ? `<br><span class="s">Done</span>` : ready ? "" : `<br><span class="s">Soon</span>`}</span>${go}</li>`; }).join("");
+  const others = COURSE.map((c, i) => { if(i + 1 === mapStage) return ""; const ids = c.lessons.map(l => l[0]); const ready = ids.some(id => READY.has(id)); const dn = ids.filter(id => p[id]?.done).length;
+    return `<div class="card stagecard ${ready ? "open" : ""}" data-st="${ready ? i + 1 : ""}"><span class="n">${i + 1}</span><span><b>${c.title}</b><span>${dn ? `${dn} of ${ids.length} done` : `${ids.length} lessons`}</span></span><span class="lock">${ready ? "›" : LOCK}</span></div>`; }).join("");
+  h(`<div class="stagehead"><div class="kicker">Stage ${mapStage}</div><h1>${st.title}</h1></div>
+    <ul class="path">${nodes}</ul><div class="stages"><h2>All stages</h2>${others}</div>`);
+  screenEl.querySelectorAll(".node[data-id]").forEach(n => { if(n.dataset.id) n.onclick = () => startLesson(n.dataset.id); });
+  screenEl.querySelectorAll(".stagecard[data-st]").forEach(n => { if(n.dataset.st) n.onclick = () => showPath(+n.dataset.st); });
+  pushNav({ v: "path", s: mapStage });
+};
+const nextLessonId = id => { const all = COURSE.flatMap(c => c.lessons.map(l => l[0])); const i = all.indexOf(id); return all[i + 1] && READY.has(all[i + 1]) ? all[i + 1] : null; };
+const _startLesson = startLesson;
+startLesson = function(id = "1.1"){ mapStage = parseInt(id); RES[id] = null; _startLesson(id); };
+{ const p0 = load(); if(p0.stage) mapStage = p0.stage; }
+
+// ---- rhythm patterns → notation ----
+const DUR = { 4: ["w"], 3: ["h", 1], 2: ["h"], 1.5: ["q", 1], 1: ["q"], 0.75: ["8", 1], 0.5: ["8"], 0.25: ["16"] };
+function patStaff(pat, time = "4/4", n = 71){ const beats = +time.split("/")[0]; let t = 0; const bars = [];
+  const notes = pat.map((d, i) => { const a = Math.abs(d); const [dd, dot] = DUR[a] || ["q"]; if(i && Math.abs(t % beats) < 1e-6) bars.push(i); t += a; return { n, d: dd, dot: !!dot, rest: d < 0 }; });
+  return { clef: "treble", time, notes, bars }; }
+// name the note on the staff (multiple choice letters)
+S.nameNote = o => ({ render(){ const N = o.rounds || 8; let r = 0, right = 0, first = true, cur;
+  h(`<div class="kicker">${o.kicker || "Practice"}</div><h1>${o.title}</h1><p>${o.line || "Tap its letter."}</p>
+    <div class="card"><div class="row" style="justify-content:space-between"><span class="muted" id="rd">1 / ${N}</span><span class="muted" id="sc">0 right</span></div><div class="staff" id="stf"></div></div>
+    <div class="choices letters">${LETTERS.map((l, i) => `<button class="choice" data-c="${i}">${l}</button>`).join("")}</div>
+    <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+  const next = () => { screenEl.querySelectorAll(".choice").forEach(c => c.className = "choice");
+    if(r >= N){ fb("good", `Done. ${right} of ${N} right.`); score(right, N); enableNext(); cur = null; return; }
+    let n; do { n = rnd(o.pool); } while(n === cur); cur = n; first = true; $("#rd").textContent = `${r + 1} / ${N}`; fb("", "");
+    drawStaff($("#stf"), { clef: o.clef || "treble", notes: [{ n, d: "w" }], width: 220 }); };
+  screenEl.querySelectorAll(".choice").forEach(c => c.onclick = () => { if(cur === null || cur === undefined) return;
+    if(LETTERS[+c.dataset.c] === nm(cur)){ c.classList.add("right"); if(first) right++; $("#sc").textContent = `${right} right`; fb("good", "Yes."); playNote(cur, 0.6); r++; const t = cur; cur = undefined; after(900, () => { cur = t; next(); }); }
+    else { c.classList.add("wrong"); first = false; fb("bad", "Not quite."); } });
+  next(); this.cleanup = clearLater;
+} });
+// play the note shown on the staff (scored)
+S.readPlay = o => S.find({ ...o, staff: true, fit: o.fit, make: () => { const n = rnd(o.pool); return { prompt: "", staff: { clef: o.clef || "treble", notes: [{ n, d: "w" }], width: 220 }, ok: x => x === n, show: [n], bad: x => `That's ${nm(x)}. Try again.` }; } });
+
+// ===================== Stage 2: Foundations =====================
+const C4 = 60, CPOS = [60, 62, 64, 65, 67], LPOS = [48, 50, 52, 53, 55];
+const whitesIn = (a, b) => range(a, b).filter(n => !isBlack(n));
+const rhyHtml = pat => `<div class="rhy">${pat.map(d => `<span class="${d > 0 ? "rn" : "rr"}" style="flex:${Math.abs(d)}"></span>`).join("")}</div><div class="rcount">${range(1, pat.reduce((a, b) => a + Math.abs(b), 0)).map(i => `<span>${((i - 1) % 4) + 1}</span>`).join("")}</div>`;
+const holdDemo = beats => { const m = metro(80, { total: 4 }); after((m.t0 - ctx.currentTime) * 1000, () => { noteOnSound(60, 0.7); keyEls.get(60)?.classList.add("demo"); after(beats * 750 - 60, () => { noteOffSound(60); keyEls.get(60)?.classList.remove("demo"); }); }); };
+const ticks = (bpm, n) => metro(bpm, { total: n });
+
+NEWL["2.1"] = [
+  S.intro(2, "The keyboard map", "Every key has a name."),
+  S.info("Black keys come in groups", "Groups of two, then three.", { keys: true, hints: [49, 51, 61, 63, 54, 56, 58, 66, 68, 70] }),
+  S.find({ kicker: " ", title: "Find the groups", line: "Play the key the card asks for.", rounds: 4, make: r => r % 2 === 0
+    ? { prompt: "A black key in a group of 2", ok: n => [1, 3].includes(pc(n)), show: [49, 51, 61, 63], bad: () => "That one's in a group of 3." }
+    : { prompt: "A black key in a group of 3", ok: n => [6, 8, 10].includes(pc(n)), show: [54, 56, 58, 66, 68, 70], bad: () => "That one's in a group of 2." } }),
+  S.info("Meet C", "The white key just left of the two black keys.", { keys: true, hints: [48, 60, 72] }),
+  S.find({ kicker: " ", title: "Find a C", line: "Look for the two black keys.", rounds: 3, make: () => ({ prompt: "Play a C", ok: n => pc(n) === 0, show: [48, 60, 72], bad: () => "C sits just left of the two black keys." }) }),
+  S.info("Seven letters", "C D E F G A B, then C again.", { keys: true, labels: true }),
+  S.follow("Play C to C", "Say each name as you play.", { seq: whitesIn(60, 72), names: true, labels: true, done: "Eight keys, seven names. Then it starts again." }),
+  S.quiz("What comes after G?", ["A", "H", "C"], 0, "Right. After G, the letters start again at A."),
+  S.info("Middle C", "The C in the middle of the piano. Our home key.", { keys: true, labels: true, hints: [60] }),
+  S.find({ title: "Find the note", line: "No names on the keys now.", rounds: 8, timed: true, make: () => { const p = rnd(WHITE_PC); return { prompt: `Play ${LETTERS[WHITE_PC.indexOf(p)]}`, ok: n => pc(n) === p, show: range(48, 72).filter(n => pc(n) === p), bad: n => `That's ${nm(n)}.` }; } }),
+  S.summary("2.1", "You can name the keys", ["Black keys: groups of 2 and 3", "C is left of the two black keys", "Seven names: C D E F G A B"], "2.2"),
+];
+
+NEWL["2.2"] = [
+  S.intro(2, "Hands and fingers", "Your fingers have numbers."),
+  S.info("Thumbs are 1", "Then 2, 3, 4, up to 5 on the little finger.", { html: `<div class="cols">${handSvg("L")}${handSvg("R")}</div>` }),
+  S.info("Curve your fingers", "Like holding a ball. Play with the fingertips.", { html: `<div class="cols">${handSvg("R", [2, 3, 4])}</div>` }),
+  S.quiz("Which finger is 3?", ["Thumb", "Middle finger", "Little finger"], 1, "Yes. 1 is the thumb, so 3 is the middle."),
+  S.quiz("And 5?", ["Little finger", "Thumb", "Index finger"], 0, "Right. 5 is the little finger."),
+  S.info("Right hand on C", "Thumb on middle C. One finger per white key.", { keys: true, labels: true, hints: CPOS, html: `<div class="cols">${handSvg("R", [1])}</div>` }),
+  S.find({ title: "Right hand: play the finger", line: "Keep your hand on the five lit keys.", rounds: 8, make: () => { const f = 1 + Math.floor(Math.random() * 5); const t = CPOS[f - 1];
+    return { prompt: `<div class="cols">${handSvg("R", [f], 80)}</div>Finger ${f}`, lit: CPOS, ok: n => n === t, show: [t], bad: () => `Finger ${f}: count from the thumb.` }; } }),
+  S.info("Left hand on C", "Little finger on the C below. Thumb on G.", { keys: true, labels: true, hints: LPOS, html: `<div class="cols">${handSvg("L", [5])}</div>` }),
+  S.find({ title: "Left hand: play the finger", line: "The thumb is on the right now.", rounds: 8, make: () => { const f = 1 + Math.floor(Math.random() * 5); const t = LPOS[5 - f];
+    return { prompt: `<div class="cols">${handSvg("L", [f], 80)}</div>Finger ${f}`, lit: LPOS, ok: n => n === t, show: [t], bad: () => `Finger ${f}: count from the thumb.` }; } }),
+  S.summary("2.2", "You know your fingers", ["Thumb is 1, little finger is 5", "Curved fingers, play on the tips", "Right thumb on middle C"], "2.3"),
+];
+
+NEWL["2.3"] = [
+  S.intro(2, "Pulse and tempo", "Music has a heartbeat."),
+  S.info("The beat", "A steady click, like footsteps.", { play: () => ticks(80, 8) }),
+  S.listen("Tempo", "How fast the beat goes. Tap each one.", [["Slow: 60 BPM", () => ticks(60, 6)], ["Medium: 90 BPM", () => ticks(90, 8)], ["Fast: 140 BPM", () => ticks(140, 10)]], "BPM means beats per minute."),
+  S.quiz("Which is faster?", ["60 BPM", "120 BPM"], 1, "Yes. 120 beats a minute is two every second."),
+  S.rhythm({ title: "Play with the click", line: "Tap Start. After 4 clicks, play the lit key on every click.", pattern: [1, 1, 1, 1, 1, 1, 1, 1], bpm: 70 }),
+  S.rhythm({ kicker: "Practice", title: "A bit faster", line: "Same again at 100 BPM.", pattern: [1, 1, 1, 1, 1, 1, 1, 1], bpm: 100 }),
+  S.rhythm({ kicker: "Practice", title: "Every other click", line: "Play on clicks 1 and 3.", pattern: [2, 2, 2, 2], bpm: 90 }),
+  S.summary("2.3", "You can keep the beat", ["The beat is a steady pulse", "Tempo is its speed, in BPM", "Play right on the click"], "2.4"),
+];
+
+NEWL["2.4"] = [
+  S.intro(2, "Note lengths", "Some notes last longer than others."),
+  S.info("Quarter note", "Lasts one beat.", { keys: true, html: rhyHtml([1, 1, 1, 1]), play: () => { const m = metro(80, { total: 4 }); range(0, 3).forEach(i => after((m.t0 - ctx.currentTime + i * 0.75) * 1000, () => playNote(60, 0.6))); }, hints: [60] }),
+  S.info("Half note", "Lasts two beats. Count 1-2.", { keys: true, html: rhyHtml([2, 2]), play: () => holdDemo(2), hints: [60] }),
+  S.info("Whole note", "Lasts four beats. Count 1-2-3-4.", { keys: true, html: rhyHtml([4]), play: () => holdDemo(4), hints: [60] }),
+  S.quiz("How many beats is a half note?", ["1", "2", "4"], 1, "Right. Half of a whole note's four."),
+  S.quiz("Which fills one bar of 4 beats?", ["Two half notes", "Three quarter notes", "Two whole notes"], 0, "Yes. 2 + 2 = 4."),
+  S.rhythm({ title: "Hold for the length", line: "Hold each note until its box ends.", pattern: [2, 2, 1, 1, 2], bpm: 70, holds: true }),
+  S.rhythm({ kicker: "Practice", title: "Long and short", line: "Whole, quarters, half.", pattern: [4, 1, 1, 2], bpm: 75, holds: true }),
+  S.summary("2.4", "You can hold notes", ["Quarter = 1 beat", "Half = 2 beats", "Whole = 4 beats"], "2.5"),
+];
+
+const fingersOf = (seq, pos, left) => seq.map(n => left ? 5 - pos.indexOf(n) : pos.indexOf(n) + 1);
+const UPDN = [0, 1, 2, 3, 4, 3, 2, 1, 0];
+const GPOS = [55, 57, 59, 60, 62], FPOS = [53, 55, 57, 58, 60];
+NEWL["2.5"] = [
+  S.intro(2, "Five-finger position", "One finger on each of five keys."),
+  S.info("C position", "Right thumb on C. Fingers on C D E F G.", { keys: true, labels: true, hints: CPOS }),
+  S.follow("Up and down", "The numbers are your fingers.", { seq: UPDN.map(i => CPOS[i]), fingers: UPDN.map(i => i + 1), labels: true }),
+  S.follow("Left hand too", "Little finger on C. Thumb on G.", { seq: UPDN.map(i => LPOS[i]), fingers: UPDN.map(i => 5 - i), labels: true }),
+  S.info("Move to G", "Same shape. Thumb on G.", { keys: true, labels: true, hints: GPOS, fit: [48, 72] }),
+  S.follow("G position", "Right hand, up and down.", { seq: UPDN.map(i => GPOS[i]), fingers: UPDN.map(i => i + 1), labels: true }),
+  S.info("Move to F", "Thumb on F. Finger 4 plays a black key.", { keys: true, labels: true, hints: FPOS }),
+  S.follow("F position", "Right hand, up and down.", { seq: UPDN.map(i => FPOS[i]), fingers: UPDN.map(i => i + 1), labels: true }),
+  { keys: true, render(){ const pat = [0, 2, 1, 3, 2, 4, 3, 1, 0]; const s = pat.map(i => CPOS[i]);
+    S.follow("Read the fingers", "No lights this time.", { kicker: "Practice", seq: s, fingers: pat.map(i => i + 1), lights: false }).render.call(this); } },
+  S.summary("2.5", "You can hold a position", ["Five fingers, five keys", "C, G and F positions", "Same shape, new place"], "2.6"),
+];
+
+const ODE = [64, 64, 65, 67, 67, 65, 64, 62, 60, 60, 62, 64, 64, 62, 62];
+const MARY = [64, 62, 60, 62, 64, 64, 64, 62, 62, 62, 64, 67, 67];
+const TWINKLE = [60, 60, 67, 67, 69, 69, 67, 65, 65, 64, 64, 62, 62, 60];
+NEWL["2.6"] = [
+  S.intro(2, "First tunes", "Real songs with five fingers."),
+  S.follow("Ode to Joy", "Follow the lit keys.", { seq: ODE, names: true, labels: true, demo: true, bpm: 100, done: "That's Beethoven!" }),
+  S.follow("Ode to Joy, with the beat", "Play one note on each click.", { seq: ODE, names: true, beat: 72, done: "In time, too." }),
+  S.follow("Ode to Joy, no lights", "Read the names.", { kicker: "Practice", seq: ODE, names: true, lights: false, done: "From memory and names. Nice." }),
+  S.follow("Mary Had a Little Lamb", "Follow the lit keys.", { seq: MARY, names: true, labels: true, demo: true, bpm: 100 }),
+  S.follow("Twinkle Twinkle", "One stretch: finger 5 reaches to A.", { seq: TWINKLE, names: true, labels: true, demo: true, bpm: 100 }),
+  S.follow("Twinkle, no lights", "Read the names.", { kicker: "Practice", seq: TWINKLE, names: true, lights: false }),
+  S.summary("2.6", "You played three tunes", ["Ode to Joy", "Mary Had a Little Lamb", "Twinkle Twinkle"], "2.7"),
+];
+
+NEWL["2.7"] = [
+  S.intro(2, "Sharps and flats", "The black keys get names too."),
+  S.info("Half step", "The very next key, black or white.", { keys: true, labels: true, hints: [60, 61] }),
+  S.info("Whole step", "Two half steps. Skip one key.", { keys: true, labels: true, hints: [60, 62] }),
+  S.info("Sharp ♯", "Up a half step. Right of C is C♯.", { keys: true, labels: "all", hints: [61] }),
+  S.info("Flat ♭", "Down a half step. That same key is also D♭.", { keys: true, labels: "all", hints: [61] }),
+  S.quiz("A half step up from E is…", ["F", "F♯", "E♯"], 0, "Right. No black key between E and F.", "Look: no black key sits between E and F.", { keys: true, labels: true, hints: [64, 65] }),
+  S.find({ title: "Up a half step", line: "Play the very next key up.", labels: true, rounds: 6, make: () => { const s = 55 + Math.floor(Math.random() * 14); return { prompt: `From ${nm(s)}`, lit: [s], ok: n => n === s + 1, show: [s + 1], bad: () => "The very next key, black or white." }; } }),
+  S.find({ title: "Down a whole step", line: "Skip one key, going down.", labels: true, rounds: 6, make: () => { const s = 52 + Math.floor(Math.random() * 18); return { prompt: `From ${nm(s, true)}`, lit: [s], ok: n => n === s - 2, show: [s - 2], bad: () => "Two half steps down." }; } }),
+  S.find({ title: "Find the black key", line: "No names on the keys.", rounds: 6, timed: true, make: () => { const p = rnd([1, 3, 6, 8, 10]); const fl = Math.random() < 0.5; return { prompt: `Play ${nm(p, fl)}`, ok: n => pc(n) === p, show: range(48, 72).filter(n => pc(n) === p), bad: n => `That's ${nm(n, fl)}.` }; } }),
+  S.summary("2.7", "You know the black keys", ["Half step: the very next key", "Whole step: two half steps", "♯ is up, ♭ is down"], "2.8"),
+];
+
+NEWL["2.8"] = [
+  S.intro(2, "First hands together", "One hand holds, the other moves."),
+  S.follow("You: melody. App: left hand", "Play Ode to Joy. The left hand comes in under you.", { seq: ODE, names: true, labels: true, backing: { 0: [48], 4: [55], 8: [48], 12: [55], 14: [48] }, backDur: 2.2 }),
+  S.follow("Now the left hand", "Play the lit low keys. The app plays the tune.", { seq: [48, 55, 48, 55], labels: true, backMel: { 0: ODE.slice(0, 4), 1: ODE.slice(4, 8), 2: ODE.slice(8, 12), 3: ODE.slice(12) }, backBeat: 0.5, bpm: 90, fitExtra: [67] }),
+  S.follow("Take turns", "Left, right, left, right.", { seq: [48, 64, 55, 67, 48, 64, 55, 60], labels: true }),
+  S.follow("Hold and move", "Hold the low C. Play the right hand over it.", { seq: [48, 60, 62, 64, 65, 67], labels: true, done: "On a real keyboard you can hold both. Here, one at a time is fine." }),
+  { keys: true, render(){ const steps = [0, 1, 2, 1, 0, 2, 3, 4, 3, 2, 1, 0]; const pick = []; let i = 2; for(let k = 0; k < 8; k++){ pick.push(CPOS[i]); i = Math.max(0, Math.min(4, i + rnd([-1, 1, 1, -1, 2, -2]))); } pick.push(60);
+    S.follow("A new tune", "Read the names, one note per click.", { kicker: "Stage check", seq: pick, names: true, lights: false, beat: 70, done: "A tune you'd never seen. Stage 2 done!" }).render.call(this); } },
+  S.summary("2.8", "Stage 2 complete!", ["You can find any note", "You can keep a steady beat", "You can play simple tunes in five-finger position"], "3.1"),
+];
+
+// ===================== Stage 3: Rhythm and reading =====================
+const q4 = (k = 4, n = 71) => Array(k).fill(0).map(() => ({ n, d: "q" }));
+const TREBLE_POOL = [60, 62, 64, 65, 67, 69, 71, 72, 74, 76, 77];
+const BASS_POOL = [43, 45, 47, 48, 50, 52, 53, 55, 57, 59, 60];
+const demoPat = (pat, bpm = 80, beats = 4) => { const m = metro(bpm, { beats, total: beats + Math.ceil(pat.reduce((a, b) => a + Math.abs(b), 0)) }); let t = 0; const items = [];
+  pat.forEach(d => { if(d > 0) items.push({ n: 72, at: t, d: Math.min(d, 1.5) }); t += Math.abs(d); });
+  after((m.t0 + beats * 60 / bpm - ctx.currentTime) * 1000, () => playSeq(items, bpm)); };
+
+NEWL["3.1"] = [
+  S.intro(3, "Bars and time signatures", "Beats come in groups."),
+  S.info("Bars", "Bar lines split the beats into groups.", { staff: { time: "4/4", notes: q4(8), bars: [4] } }),
+  S.info("4/4", "Top number: 4 beats in each bar.", { staff: { time: "4/4", notes: q4(4) }, play: () => metro(90, { beats: 4, total: 8 }) }),
+  S.info("3/4", "3 beats in each bar. Like a waltz.", { staff: { time: "3/4", notes: q4(6), bars: [3] }, play: () => metro(110, { beats: 3, total: 9 }) }),
+  S.info("2/4", "2 beats in each bar. Like a march.", { staff: { time: "2/4", notes: q4(4), bars: [2] }, play: () => metro(100, { beats: 2, total: 8 }) }),
+  S.quiz("In 3/4, how many beats are in a bar?", ["2", "3", "4"], 1, "Right. The top number tells you."),
+  S.rhythm({ title: "Play in 3/4", line: "The first click of each bar is higher. Play on every click.", pattern: [1, 1, 1, 1, 1, 1], beats: 3, bpm: 90, staff: patStaff([1, 1, 1, 1, 1, 1], "3/4") }),
+  S.ear({ title: "Count the beats", line: "Listen for the high click. Which time?", labels: ["2/4", "3/4", "4/4"],
+    rounds: () => shuffle([0, 1, 2, 1, 2, 0]).map(a => ({ play: () => metro(110, { beats: a + 2, total: (a + 2) * 3 }), answer: a })) }),
+  S.summary("3.1", "You can count bars", ["Bar lines group the beats", "Top number = beats per bar", "4/4, 3/4 and 2/4"], "3.2"),
+];
+
+NEWL["3.2"] = [
+  S.intro(3, "Rests", "Silence counts too."),
+  S.info("Quarter rest", "One beat of silence.", { staff: { time: "4/4", notes: [{ n: 71, d: "q" }, { d: "q", rest: true }, { n: 71, d: "q" }, { d: "q", rest: true }] }, play: () => demoPat([1, -1, 1, -1]) }),
+  S.info("Half and whole rests", "Half rest sits on a line. Whole rest hangs under one.", { staff: { time: "4/4", notes: [{ d: "h", rest: true }, { n: 71, d: "h" }, { d: "w", rest: true }], bars: [2] } }),
+  S.quiz("How long is a half rest?", ["1 beat", "2 beats", "4 beats"], 1, "Yes. Same as a half note, but silent."),
+  S.rhythm({ title: "Play and wait", line: "Play on the notes. Stay quiet on the rests.", pattern: [1, -1, 1, -1, 2, -2], bpm: 70, staff: patStaff([1, -1, 1, -1, 2, -2]) }),
+  S.rhythm({ kicker: "Practice", title: "Read the rests", line: "No boxes now. Just the music.", pattern: [1, 1, -2, -1, 1, 2], bpm: 75, staff: patStaff([1, 1, -2, -1, 1, 2]), blocks: false }),
+  S.summary("3.2", "You can count silence", ["Rests are silent beats", "Quarter, half, whole rests", "Keep counting through them"], "3.3"),
+];
+
+NEWL["3.3"] = [
+  S.intro(3, "Eighth notes", "Two notes in one beat."),
+  S.info("Eighth notes", "Half a beat each. Count 1-and-2-and.", { staff: { time: "4/4", notes: Array(8).fill(0).map(() => ({ n: 71, d: "8" })) }, play: () => demoPat([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]) }),
+  S.quiz("How many eighth notes fit in one beat?", ["1", "2", "4"], 1, "Right. Two halves make one beat."),
+  S.rhythm({ title: "Quarters and eighths", line: "Count 1, 2-and, 3, 4-and.", pattern: [1, 0.5, 0.5, 1, 0.5, 0.5], bpm: 70, staff: patStaff([1, 0.5, 0.5, 1, 0.5, 0.5]) }),
+  S.rhythm({ kicker: "Practice", title: "Read it", line: "Just the music.", pattern: [0.5, 0.5, 1, 0.5, 0.5, 1, 1, 0.5, 0.5, 2], bpm: 80, staff: patStaff([0.5, 0.5, 1, 0.5, 0.5, 1, 1, 0.5, 0.5, 2]), blocks: false }),
+  S.rhythm({ kicker: "Practice", title: "Faster", line: "Same idea at 100 BPM.", pattern: [0.5, 0.5, 0.5, 0.5, 1, 1, 0.5, 0.5, 1, 2], bpm: 100, staff: patStaff([0.5, 0.5, 0.5, 0.5, 1, 1, 0.5, 0.5, 1, 2]), blocks: false }),
+  S.summary("3.3", "You can play eighths", ["Eighth note = half a beat", "Count 1-and-2-and", "Pairs share a beam"], "3.4"),
+];
+
+NEWL["3.4"] = [
+  S.intro(3, "Dots and ties", "Two ways to make a note longer."),
+  S.info("The dot", "Adds half again. A dotted half is 3 beats.", { staff: { time: "4/4", notes: [{ n: 71, d: "h", dot: true }, { n: 71, d: "q" }] }, play: () => demoPat([3, 1]) }),
+  S.info("Dotted quarter", "1½ beats. Usually an eighth follows it.", { staff: { time: "4/4", notes: [{ n: 71, d: "q", dot: true }, { n: 71, d: "8" }, { n: 71, d: "h" }] }, play: () => demoPat([1.5, 0.5, 2]) }),
+  S.info("The tie", "A curve that joins two notes into one.", { staff: { time: "4/4", notes: [{ n: 71, d: "h" }, { n: 71, d: "h" }, { n: 71, d: "h" }, { n: 71, d: "h" }], ties: [[1, 2]], bars: [2] } }),
+  S.quiz("A dotted half note lasts…", ["2 beats", "3 beats", "4 beats"], 1, "Yes. 2 + 1 = 3."),
+  S.quiz("Two tied half notes last…", ["2 beats", "4 beats", "They're played twice"], 1, "Right. One press, held for 4."),
+  S.rhythm({ title: "Hold the dots", line: "Hold each note its full length.", pattern: [3, 1, 1.5, 0.5, 2], bpm: 70, holds: true, staff: patStaff([3, 1, 1.5, 0.5, 2]) }),
+  S.rhythm({ kicker: "Practice", title: "Across the bar", line: "The tie means: don't press again.", pattern: [2, 4, 2], bpm: 75, holds: true,
+    staff: { clef: "treble", time: "4/4", notes: [{ n: 71, d: "h" }, { n: 71, d: "h" }, { n: 71, d: "h" }, { n: 71, d: "h" }], ties: [[1, 2]], bars: [2] }, blocks: false }),
+  S.summary("3.4", "You can stretch notes", ["A dot adds half again", "Dotted half = 3, dotted quarter = 1½", "A tie joins two notes into one"], "3.5"),
+];
+
+const lineNotes = (ns) => ns.map(n => ({ n, d: "q" }));
+NEWL["3.5"] = [
+  S.intro(3, "Treble clef", "Where a note sits tells you which key."),
+  S.info("Higher on the page", "Higher on the staff means a higher key.", { staff: { notes: lineNotes([60, 62, 64, 65, 67, 69, 71, 72]) }, play: () => playSeq(melody([60, 62, 64, 65, 67, 69, 71, 72], 0.5), 100) }),
+  S.info("Treble clef", "Also called G clef. Its curl circles the G line.", { staff: { notes: [{ n: 67, d: "w", hl: true }] } }),
+  S.info("Middle C", "Sits on its own short line below the staff.", { staff: { notes: [{ n: 60, d: "w", hl: true }] }, keys: true, labels: true, hints: [60] }),
+  S.info("Spaces: F A C E", "The four spaces spell FACE.", { staff: { notes: lineNotes([65, 69, 72, 76]) } }),
+  S.info("Lines: E G B D F", "Every Good Boy Does Fine.", { staff: { notes: lineNotes([64, 67, 71, 74, 77]) } }),
+  S.nameNote({ title: "Name the note", clef: "treble", pool: TREBLE_POOL, rounds: 8 }),
+  S.readPlay({ title: "Play the note", line: "Play what you see.", clef: "treble", pool: TREBLE_POOL, rounds: 8, fit: [60, 77], labels: false }),
+  S.summary("3.5", "You can read treble clef", ["Spaces: F A C E", "Lines: E G B D F", "Middle C has its own line"], "3.6"),
+];
+
+NEWL["3.6"] = [
+  S.intro(3, "Bass clef", "The low notes, for the left hand."),
+  S.info("Bass clef", "Also called F clef. Its two dots hug the F line.", { staff: { clef: "bass", notes: [{ n: 53, d: "w", hl: true }] } }),
+  S.info("Spaces: A C E G", "All Cows Eat Grass.", { staff: { clef: "bass", notes: lineNotes([45, 48, 52, 55]) } }),
+  S.info("Lines: G B D F A", "Good Boys Do Fine Always.", { staff: { clef: "bass", notes: lineNotes([43, 47, 50, 53, 57]) } }),
+  S.info("Middle C again", "Now on a short line above the staff.", { staff: { clef: "bass", notes: [{ n: 60, d: "w", hl: true }] } }),
+  S.nameNote({ title: "Name the note", clef: "bass", pool: BASS_POOL, rounds: 8 }),
+  S.readPlay({ title: "Play the note", line: "Play what you see.", clef: "bass", pool: BASS_POOL, rounds: 8, fit: [43, 60] }),
+  S.summary("3.6", "You can read bass clef", ["Spaces: A C E G", "Lines: G B D F A", "Middle C sits just above"], "3.7"),
+];
+
+// two-hand phrase: events alternate hands; treble/bass voices padded with rests
+function grandPhrase(ev){ return { grand: true, notes: ev.map(([h, n]) => h === "R" ? { n, d: "q" } : { d: "q", rest: true }), bass: ev.map(([h, n]) => h === "L" ? { n, d: "q" } : { d: "q", rest: true }) }; }
+const PH1 = [["L", 48], ["R", 64], ["L", 55], ["R", 67], ["L", 48], ["R", 64], ["L", 55], ["R", 60]];
+const PH2 = [["L", 53], ["R", 65], ["R", 69], ["L", 48], ["R", 67], ["R", 64], ["L", 55], ["R", 60]];
+NEWL["3.7"] = [
+  S.intro(3, "Grand staff", "Both clefs, joined."),
+  S.info("Two staves", "Top for the right hand, bottom for the left.", { staff: { grand: true, notes: [{ n: 64, d: "w" }], bass: [{ n: 48, d: "w" }] } }),
+  S.info("Middle C in the middle", "The same key, written either way.", { staff: { grand: true, notes: [{ n: 60, d: "h", hl: true }, { d: "h", rest: true }], bass: [{ d: "h", rest: true }, { n: 60, d: "h", hl: true }] } }),
+  S.quiz("Which hand plays the bottom staff?", ["Left", "Right"], 0, "Yes. Bass clef, left hand."),
+  S.follow("Hands take turns", "Follow the orange note.", { seq: PH1.map(e => e[1]), staff: grandPhrase(PH1), labels: true }),
+  S.follow("Read it", "No lights now.", { kicker: "Practice", seq: PH2.map(e => e[1]), staff: grandPhrase(PH2), lights: false }),
+  S.summary("3.7", "You can read both hands", ["Treble on top, bass below", "Braced together: the grand staff", "Middle C can sit in either"], "3.8"),
+];
+
+function genPhrase(level){ const pool = level === 1 ? [60, 62, 64, 65, 67] : level === 2 ? [60, 62, 64, 65, 67, 69, 71, 72] : [55, 57, 59, 60, 62, 64, 65, 67, 69, 71, 72];
+  let i = Math.floor(pool.length / 2); const out = [];
+  for(let k = 0; k < 8; k++){ out.push(pool[i]); const jump = level === 1 ? rnd([-1, 1]) : level === 2 ? rnd([-2, -1, 1, 2]) : rnd([-3, -2, -1, 1, 2, 3]); i = Math.max(0, Math.min(pool.length - 1, i + jump)); }
+  return out; }
+const readScreen = (level, title, line, kickr) => ({ keys: true, render(){ const ph = genPhrase(level);
+  S.follow(title, line, { kicker: kickr, seq: ph, staff: { time: "4/4", notes: ph.map(n => ({ n, d: "q" })), bars: [4] }, lights: false, fitExtra: [55, 72], done: "Read and played on the first look." }).render.call(this); } });
+NEWL["3.8"] = [
+  S.intro(3, "Sight-reading", "Play music you've never seen."),
+  S.info("Look ahead", "Read the next note while you play this one."),
+  S.info("Steps and skips", "Next line or space is a step. Jumping one is a skip.", { staff: { notes: lineNotes([64, 65, 67, 71]) } }),
+  readScreen(1, "Level 1: steps", "Brand new each time.", "Practice"),
+  readScreen(2, "Level 2: skips", "A little wider.", "Practice"),
+  readScreen(3, "Level 3: wider", "Below middle C too.", "Practice"),
+  S.summary("3.8", "You can sight-read", ["Look one note ahead", "Spot steps and skips", "New music every time"], "3.9"),
+];
+
+const hit = (n, v) => { noteOnSound(n, v); after(800, () => noteOffSound(n)); };
+NEWL["3.9"] = [
+  S.intro(3, "Dynamics", "Signs for soft and loud."),
+  S.info("p, mf, f", "p = piano, soft. mf = medium. f = forte, loud.", { html: `<div class="cols"><span class="dynmark">p</span><span class="dynmark">mf</span><span class="dynmark">f</span></div>` }),
+  S.listen("Hear them", "Tap each one.", [["p", () => hit(64, 0.25)], ["mf", () => hit(64, 0.6)], ["f", () => hit(64, 1)]], "Same key. Only the force changes."),
+  S.info("Getting louder, getting softer", "Crescendo opens: <. Diminuendo closes: >.", { play: () => [0.2, 0.35, 0.5, 0.7, 0.9, 1].forEach((v, i) => after(i * 380, () => hit(64, v))) }),
+  S.quiz("What does f mean?", ["Loud", "Soft", "Fast"], 0, "Yes. Forte, loud."),
+  S.dyn({ title: "Play the sign", marks: true, rounds: [0, 2, 1, 2, 0, 1] }),
+  S.dyn({ kicker: "Practice", title: "Crescendo", line: "Soft, then medium, then loud.", rounds: [0, 1, 2] }),
+  S.summary("3.9", "You can read dynamics", ["p soft, mf medium, f loud", "< crescendo, > diminuendo", "On screen, tap lower to play louder"], "3.10"),
+];
+
+const TRIP = 1 / 3;
+NEWL["3.10"] = [
+  S.intro(3, "More rhythm", "Faster notes and off-beats."),
+  S.info("Sixteenth notes", "Four in one beat. Count 1-e-and-a.", { staff: { time: "4/4", notes: [...Array(4).fill(0).map(() => ({ n: 71, d: "16" })), { n: 71, d: "q" }, ...Array(4).fill(0).map(() => ({ n: 71, d: "16" })), { n: 71, d: "q" }] }, play: () => demoPat([0.25, 0.25, 0.25, 0.25, 1, 0.25, 0.25, 0.25, 0.25, 1], 70) }),
+  S.rhythm({ title: "Play the sixteenths", line: "Four quick ones, then a long one.", pattern: [0.25, 0.25, 0.25, 0.25, 1, 0.25, 0.25, 0.25, 0.25, 1], bpm: 60, staff: patStaff([0.25, 0.25, 0.25, 0.25, 1, 0.25, 0.25, 0.25, 0.25, 1]) }),
+  S.info("Triplets", "Three in one beat. Count tri-po-let.", { play: () => demoPat([TRIP, TRIP, TRIP, 1, TRIP, TRIP, TRIP, 1], 70), html: rhyHtml([TRIP, TRIP, TRIP, 1, TRIP, TRIP, TRIP, 1]).replace(/<div class="rcount">.*<\/div>$/, "") }),
+  S.rhythm({ title: "Play the triplets", line: "Three even notes per click.", pattern: [TRIP, TRIP, TRIP, 1, TRIP, TRIP, TRIP, 1], bpm: 60 }),
+  S.info("Syncopation", "Notes that land between the beats.", { staff: patStaff([0.5, 1, 1, 0.5, 1]), play: () => demoPat([0.5, 1, 1, 0.5, 1]) }),
+  S.rhythm({ title: "Off the beat", line: "Feel the push between clicks.", pattern: [0.5, 1, 1, 0.5, 1], bpm: 75, staff: patStaff([0.5, 1, 1, 0.5, 1]) }),
+  readScreen(2, "A new piece", "Read it on the first try.", "Stage check"),
+  S.dyn({ kicker: "Stage check", title: "With dynamics", marks: true, rounds: [2, 0, 1, 2] }),
+  S.summary("3.10", "Stage 3 complete!", ["You can read treble and bass clef", "You can count rests, dots, ties and eighths", "You can play soft and loud from the signs"], "4.1"),
+];
+
+// ===================== Stage 4: Scales and keys =====================
+const STEPNAMES = ["W", "W", "H", "W", "W", "W", "H"];
+const updown = a => [...a, ...a.slice(0, -1).reverse()];
+const RH_FING = { C: [1,2,3,1,2,3,4,5], G: [1,2,3,1,2,3,4,5], D: [1,2,3,1,2,3,4,5], A: [1,2,3,1,2,3,4,5], E: [1,2,3,1,2,3,4,5], F: [1,2,3,4,1,2,3,4], Bb: [4,1,2,3,1,2,3,4], Eb: [3,1,2,3,4,1,2,3] };
+const LH_C = [5,4,3,2,1,3,2,1];
+const KEYROOT = { C: 60, G: 55, D: 62, A: 57, E: 52, B: 59, "F#": 54, F: 53, Bb: 58, Eb: 51, Ab: 56, Db: 61, Gb: 54 };
+const KEYLABEL = { C: "C", G: "G", D: "D", A: "A", E: "E", B: "B", "F#": "F♯", F: "F", Bb: "B♭", Eb: "E♭", Ab: "A♭", Db: "D♭", Gb: "G♭" };
+const isFlatKey = k => ["F", "Bb", "Eb", "Ab", "Db", "Gb"].includes(k);
+const scaleFollow = (k, title, line, o = {}) => { const sc = scaleNotes(KEYROOT[k], MAJOR); const f = RH_FING[k];
+  return S.follow(title, line, { seq: updown(sc), fingers: f ? updown(f) : null, names: !f, labels: true, flat: isFlatKey(k), demo: true, bpm: 120, ...o }); };
+const scaleStaff = (k, opts = {}) => ({ key: k, flat: isFlatKey(k), notes: scaleNotes(KEYROOT[k] < 57 ? KEYROOT[k] + 12 : KEYROOT[k], MAJOR).map(n => ({ n, d: "8" })), ...opts });
+const buildScale = (k, title) => { const sc = scaleNotes(KEYROOT[k], MAJOR);
+  return S.find({ kicker: " ", title, line: "Follow the steps from the lit key.", labels: true, rounds: 7, make: r => ({ prompt: `${STEPNAMES[r] === "W" ? "Whole" : "Half"} step up`, lit: sc.slice(0, r + 1), ok: n => n === sc[r + 1], show: [sc[r + 1]], good: r === 6 ? `That's ${KEYLABEL[k]} major!` : "Yes!", bad: () => STEPNAMES[r] === "W" ? "Whole step: skip one key." : "Half step: the very next key." }) }); };
+
+NEWL["4.1"] = [
+  S.intro(4, "The major scale formula", "Seven notes, one pattern."),
+  S.info("C major", "All the white keys from C to C.", { keys: true, labels: true, hints: scaleNotes(60, MAJOR), play: () => playSeq(melody(scaleNotes(60, MAJOR), 0.5), 110) }),
+  S.info("The pattern", "Whole, whole, half, whole, whole, whole, half.", { html: `<div class="toks">${STEPNAMES.map(x => `<span class="tok">${x}</span>`).join("")}</div>` }),
+  S.quiz("Where are the half steps in C major?", ["E–F and B–C", "C–D and F–G", "There are none"], 0, "Right. No black key between them.", "Look for white keys with no black key between.", { keys: true, labels: true, hints: [64, 65, 71, 72] }),
+  buildScale("G", "Build G major"),
+  S.info("G major needs F♯", "The pattern forced one black key.", { keys: true, labels: "all", hints: scaleNotes(55, MAJOR) }),
+  buildScale("F", "Build F major"),
+  S.quiz("Which major key has no sharps or flats?", ["G", "C", "F"], 1, "Yes. C major is all white keys."),
+  S.summary("4.1", "You can build a major scale", ["W W H W W W H", "Start anywhere, follow the pattern", "Black keys appear where the pattern needs them"], "4.2"),
+];
+
+NEWL["4.2"] = [
+  S.intro(4, "First scales", "C, G and F major, with the right fingers."),
+  S.info("Thumb under", "After finger 3, tuck your thumb under and keep going.", { html: `<div class="cols">${handSvg("R", [1, 3])}</div>` }),
+  scaleFollow("C", "C major, right hand", "Up and down. The numbers are fingers."),
+  S.follow("C major, left hand", "Finger 3 crosses over the thumb.", { seq: updown(scaleNotes(48, MAJOR)), fingers: updown(LH_C), labels: true }),
+  scaleFollow("G", "G major, right hand", "Same fingers. Watch for F♯."),
+  scaleFollow("F", "F major, right hand", "Thumb under after finger 4 here."),
+  S.even({ title: "C major in time", line: "One note per click, up and down.", seq: updown(scaleNotes(60, MAJOR)), bpm: 70 }),
+  S.even({ title: "A bit faster", line: "Same, at 95 BPM.", seq: updown(scaleNotes(60, MAJOR)), bpm: 95 }),
+  S.summary("4.2", "You can play three scales", ["Thumb tucks under after 3 (or 4)", "C, G and F major", "Even notes, steady tempo"], "4.3"),
+];
+
+const DEG_NAMES = ["tonic", "supertonic", "mediant", "subdominant", "dominant", "submediant", "leading note"];
+NEWL["4.3"] = [
+  S.intro(4, "Scale degrees", "Every note in a scale has a number."),
+  S.info("Numbers 1 to 7", "In C major, C is 1 and B is 7.", { keys: true, labels: true, hints: scaleNotes(60, MAJOR).slice(0, 7), html: `<div class="toks">${LETTERS.map((l, i) => `<span class="tok">${l}<br><small>${i + 1}</small></span>`).join("")}</div>` }),
+  S.info("Tonic and dominant", "1 is the tonic: home. 5 is the dominant: the pull back home.", { play: () => playSeq([{ n: 60, at: 0, d: 1 }, { n: 67, at: 1, d: 1 }, { n: 60, at: 2, d: 2 }], 80) }),
+  S.info("The other names", "4 subdominant, 7 leading note. It leans up to 1.", { play: () => playSeq(melody([71, 72], 1), 70) }),
+  S.quiz("In C major, which note is 5?", ["E", "G", "A"], 1, "Yes. C D E F G: G is 5."),
+  S.quiz("Degree 1 is called…", ["The dominant", "The tonic", "The leading note"], 1, "Right. Home."),
+  S.find({ title: "Play the degree", line: "Count up from the key's first note.", labels: true, rounds: 8, make: () => { const k = rnd(["C", "G", "F", "D"]); const d = 1 + Math.floor(Math.random() * 7); const t = scaleNotes(KEYROOT[k], MAJOR)[d - 1];
+    return { prompt: `${d} in ${KEYLABEL[k]} major`, ok: n => pc(n) === pc(t), show: [t], lit: [KEYROOT[k]], bad: () => `Count from ${KEYLABEL[k]}: that's 1.` }; } }),
+  S.summary("4.3", "You know the degrees", ["Numbers 1 to 7 in any key", "1 tonic, 5 dominant", "7 leans back to 1"], "4.4"),
+];
+
+NEWL["4.4"] = [
+  S.intro(4, "Sharp keys", "Why G has one sharp and D has two."),
+  S.info("Key signature", "Sharps at the start count for the whole piece.", { staff: scaleStaff("G") }),
+  S.info("Order of sharps", "F C G D A E B. Each new key adds the next one.", { html: `<div class="toks">${["F♯", "C♯", "G♯", "D♯", "A♯", "E♯", "B♯"].map(x => `<span class="tok">${x}</span>`).join("")}</div>` }),
+  S.info("Name the key", "Last sharp, then one half step up. F♯ → G major.", { staff: { key: "D", notes: [] } }),
+  S.quiz("D major has which sharps?", ["F♯ and C♯", "F♯ only", "C♯ and G♯"], 0, "Yes. The first two in the order."),
+  S.quiz("Which key is this?", ["D major", "A major", "E major"], 1, "Right. Last sharp G♯, half step up is A.", "Find the last sharp, go up a half step.", { staff: { key: "A", notes: [] } }),
+  scaleFollow("D", "D major", "Two sharps: F♯ and C♯."),
+  scaleFollow("A", "A major", "Three sharps: F♯, C♯, G♯."),
+  S.summary("4.4", "You can read sharp keys", ["Order: F C G D A E B", "Last sharp + half step = the key", "G 1, D 2, A 3, E 4"], "4.5"),
+];
+
+NEWL["4.5"] = [
+  S.intro(4, "Flat keys", "The mirror image of sharp keys."),
+  S.info("Order of flats", "B E A D G C F. The sharp order, backwards.", { html: `<div class="toks">${["B♭", "E♭", "A♭", "D♭", "G♭", "C♭", "F♭"].map(x => `<span class="tok">${x}</span>`).join("")}</div>` }),
+  S.info("Name the key", "The second-last flat is the key. B♭ E♭ → B♭ major.", { staff: { key: "Bb", notes: [] } }),
+  S.info("F major", "Just one flat: B♭. Remember this one.", { staff: scaleStaff("F") }),
+  S.quiz("Which key is this?", ["E♭ major", "A♭ major", "B♭ major"], 0, "Yes. Second-last flat is E♭.", "Look at the second-last flat.", { staff: { key: "Eb", notes: [] } }),
+  S.quiz("How many flats in B♭ major?", ["1", "2", "3"], 1, "Right. B♭ and E♭."),
+  scaleFollow("Bb", "B♭ major", "Starts on finger 4."),
+  scaleFollow("Eb", "E♭ major", "Starts on finger 3."),
+  S.summary("4.5", "You can read flat keys", ["Order: B E A D G C F", "Second-last flat = the key", "F has one flat, B♭ two, E♭ three"], "4.6"),
+];
+
+const CIRCLE = [["C", 0], ["G", 1], ["D", 2], ["A", 3], ["E", 4], ["B", 5], ["F#", 6], ["Db", -5], ["Ab", -4], ["Eb", -3], ["Bb", -2], ["F", -1]];
+function circleSvg(){ return `<svg class="circle5" viewBox="0 0 300 300" width="280" height="280">${CIRCLE.map(([k, v], i) => { const a = (i / 12) * 2 * Math.PI - Math.PI / 2, x = 150 + 115 * Math.cos(a), y = 150 + 115 * Math.sin(a);
+  return `<g class="ck" data-li="${i}" style="cursor:pointer"><circle cx="${x}" cy="${y}" r="25" fill="var(--card)" stroke="var(--line)" stroke-width="2"/><text x="${x}" y="${y + 6}" text-anchor="middle" font-size="17" fill="var(--ink)">${KEYLABEL[k]}</text></g>`; }).join("")}<text x="150" y="146" text-anchor="middle" font-size="14" fill="var(--ink2)" id="cinfo">Tap a key</text><text x="150" y="168" text-anchor="middle" font-size="13" fill="var(--ink2)" id="cinfo2"></text></svg>`; }
+const sigText = v => v === 0 ? "no sharps or flats" : v > 0 ? `${v} sharp${v > 1 ? "s" : ""}` : `${-v} flat${v < -1 ? "s" : ""}`;
+NEWL["4.6"] = [
+  S.intro(4, "Circle of fifths", "All 12 keys on one clock."),
+  { render(){ let tapped = new Set();
+    h(`<h1>The circle</h1><p>Tap any 4 keys to hear them.</p><div class="cols">${circleSvg()}</div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+    screenEl.querySelectorAll(".ck").forEach(g => g.onclick = () => { const [k, v] = CIRCLE[+g.dataset.li]; const r = KEYROOT[k]; chord([r, r + 4, r + 7], 1.4); g.classList.add("heard"); g.querySelector("circle").setAttribute("fill", "#FFF0EA");
+      document.getElementById("cinfo").textContent = `${KEYLABEL[k]} major`; document.getElementById("cinfo2").textContent = sigText(v); tapped.add(k);
+      if(tapped.size >= 4){ fb("good", "Neighbours share all but one note."); enableNext(); } }); } },
+  S.info("Clockwise: one more sharp", "Each step goes 5 notes up and adds a sharp.", { html: `<div class="toks">${["C", "G", "D", "A", "E"].map((k, i) => `<span class="tok">${k}<br><small>${i}♯</small></span>`).join("")}</div>` }),
+  S.info("The other way: one more flat", "Each step adds a flat.", { html: `<div class="toks">${["C", "F", "B♭", "E♭", "A♭"].map((k, i) => `<span class="tok">${k}<br><small>${i}♭</small></span>`).join("")}</div>` }),
+  S.quiz("Next key clockwise after D?", ["G", "A", "E"], 1, "Yes. 5 notes up from D is A."),
+  S.quiz("How many flats in E♭ major?", ["2", "3", "4"], 1, "Right. Three steps from C going the flat way."),
+  S.quiz("Why are neighbours close?", ["They share 6 of 7 notes", "They start on the same key", "They are both minor"], 0, "Yes. Only one note changes."),
+  S.summary("4.6", "You know the circle", ["Clockwise adds a sharp", "Counter-clockwise adds a flat", "Neighbours differ by one note"], "4.7"),
+];
+
+const ALLK = ["C", "G", "D", "A", "E", "B", "F", "Bb", "Eb", "Ab", "Db", "F#"];
+NEWL["4.7"] = [
+  S.intro(4, "All 12 major scales", "Same pattern, every key."),
+  S.info("Shape groups", "C G D A E all use fingers 1-2-3, 1-2-3-4-5.", { html: `<div class="toks">${["C", "G", "D", "A", "E"].map(x => `<span class="tok">${x}</span>`).join("")}</div>` }),
+  S.info("Black-key starts", "B♭, E♭, A♭, D♭: thumb only on white keys.", { html: `<div class="toks">${["B♭", "E♭", "A♭", "D♭"].map(x => `<span class="tok">${x}</span>`).join("")}</div>` }),
+  scaleFollow("E", "E major", "Four sharps."),
+  scaleFollow("Ab", "A♭ major", "Four flats.", { fingers: null, names: true }),
+  S.find({ title: "Any key, up", line: "Play the scale from the lit key. Names are on.", labels: "all", rounds: 6, make: () => { const k = rnd(ALLK); const r = KEYROOT[k]; const sc = scaleNotes(r, MAJOR);
+    return { prompt: `${KEYLABEL[k]} major`, lit: [r], seq: sc, show: sc, good: `${KEYLABEL[k]} major!` }; } }),
+  S.summary("4.7", "You can play any major scale", ["One pattern, 12 keys", "Shape groups help fingering", "These join your daily review"], "4.8"),
+];
+
+const AMIN = scaleNotes(57, NAT_MIN), AHAR = scaleNotes(57, HARM_MIN), AMEL = scaleNotes(57, MEL_MIN);
+NEWL["4.8"] = [
+  S.intro(4, "Minor keys", "The darker sound."),
+  S.listen("Major and minor", "Tap both.", [["C major", () => playSeq(melody(scaleNotes(60, MAJOR), 0.5), 110)], ["A minor", () => playSeq(melody(AMIN, 0.5), 110)]], "Minor sounds sadder. Same white keys!"),
+  S.info("Relative minor", "Same notes as the major, but start on 6. C major → A minor.", { keys: true, labels: true, hints: AMIN }),
+  S.info("Minor steps", "W H W W H W W.", { html: `<div class="toks">${["W", "H", "W", "W", "H", "W", "W"].map(x => `<span class="tok">${x}</span>`).join("")}</div>` }),
+  S.listen("Three minors", "Tap each.", [["Natural", () => playSeq(melody(AMIN, 0.5), 110)], ["Harmonic: raised 7", () => playSeq(melody(AHAR, 0.5), 110)], ["Melodic: raised 6 and 7 going up", () => playSeq(melody(AMEL, 0.5), 110)]], "The raised 7th pulls hard back home."),
+  S.ear({ title: "Major or minor?", labels: ["Major", "Minor"], rounds: () => shuffle([0, 1, 0, 1, 0, 1]).map(a => { const r = 55 + Math.floor(Math.random() * 6); return { play: () => playSeq(melody(scaleNotes(r, a ? NAT_MIN : MAJOR), 0.4), 120), answer: a }; }) }),
+  S.follow("A harmonic minor", "Watch the G♯.", { seq: updown(AHAR), names: true, labels: true, demo: true, bpm: 120 }),
+  S.quiz("Relative minor of G major?", ["E minor", "D minor", "B minor"], 0, "Yes. 6th note of G major is E."),
+  S.summary("4.8", "You can hear and play minor", ["Relative minor starts on 6", "W H W W H W W", "Harmonic raises 7, melodic raises 6 and 7"], "4.9"),
+];
+
+const CPENT = [60, 62, 64, 67, 69, 72], CBLUES = [60, 63, 65, 66, 67, 70, 72];
+NEWL["4.9"] = [
+  S.intro(4, "Pentatonic and blues", "Five notes that always fit."),
+  S.info("Pentatonic", "A major scale without 4 and 7: C D E G A.", { keys: true, labels: true, hints: CPENT, play: () => playSeq(melody(CPENT, 0.5), 110) }),
+  S.follow("C pentatonic", "Up and down.", { seq: updown(CPENT), names: true, labels: true }),
+  S.info("All the black keys", "Together they make a pentatonic too.", { keys: true, hints: [54, 56, 58, 61, 63], play: () => playSeq(melody([54, 56, 58, 61, 63, 66], 0.5), 110) }),
+  S.info("Blues scale", "C E♭ F F♯ G B♭ C. That extra F♯ is the blue note.", { keys: true, labels: "all", hints: CBLUES, play: () => playSeq(melody(CBLUES, 0.5), 110) }),
+  S.follow("C blues", "Up and down.", { seq: updown(CBLUES), names: true, labels: "all", flat: true }),
+  S.jam({ title: "Try it with a band", line: "Play any lit keys. Everything fits.", chords: [[48, 52, 55], [53, 57, 60], [55, 59, 62], [48, 52, 55]], names: ["C", "F", "G", "C"], scale: CPENT, bpm: 100, need: 16 }),
+  { keys: true, render(){ const k = rnd(["G", "D", "F", "A"]); const sc = scaleNotes(KEYROOT[k], MAJOR);
+    S.even({ kicker: "Stage check", title: `${KEYLABEL[k]} major, eighth notes`, line: "Two notes per click at 80 BPM, up and down.", seq: updown(sc), bpm: 80, sub: 2, limit: 70 }).render.call(this); } },
+  S.summary("4.9", "Stage 4 complete!", ["Any major or minor scale", "Key signatures and the circle", "Pentatonic and blues"], "5.1"),
+];
+
+// ===================== Stage 5: Intervals and ear training =====================
+const ORD = ["", "unison", "2nd", "3rd", "4th", "5th", "6th", "7th", "octave"];
+const INTV = [["minor 2nd", 1], ["major 2nd", 2], ["minor 3rd", 3], ["major 3rd", 4], ["perfect 4th", 5], ["tritone", 6], ["perfect 5th", 7], ["minor 6th", 8], ["major 6th", 9], ["minor 7th", 10], ["major 7th", 11], ["octave", 12]];
+const WHITES = range(48, 84).filter(n => !isBlack(n));
+const whiteUp = (s, size) => WHITES[WHITES.indexOf(s) + size - 1];
+const two = (a, b, harm) => { playNote(a, 0.9); after(harm ? 0 : 700, () => playNote(b, 1.1)); };
+const cadence = (r = 60, then) => { const ch = [[r - 12, r + 4, r + 7], [r - 7, r + 5, r + 9], [r - 5, r + 2, r + 7], [r - 12, r + 4, r + 7]];
+  ch.forEach((c, i) => after(i * 600, () => chord(c, 0.55))); if(then) after(2700, then); };
+const QUAL = { Major: [0, 4, 7], Minor: [0, 3, 7], Diminished: [0, 3, 6], Augmented: [0, 4, 8] };
+
+NEWL["5.1"] = [
+  S.intro(5, "Interval sizes", "The distance between two notes."),
+  S.info("Count the letters", "C to E: C, D, E. Three letters, a 3rd.", { keys: true, labels: true, hints: [60, 64], play: () => two(60, 64) }),
+  S.info("2nd up to octave", "Count both ends. C to G is a 5th.", { html: `<div class="toks">${[2, 3, 4, 5, 6, 7, 8].map(k => `<span class="tok">${ORD[k]}<br><small>C–${LETTERS[(k - 1) % 7]}</small></span>`).join("")}</div>` }),
+  S.quiz("C up to A is a…", ["5th", "6th", "7th"], 1, "Yes. C D E F G A: six letters."),
+  S.quiz("E up to B is a…", ["4th", "5th", "6th"], 1, "Right. E F G A B."),
+  S.find({ title: "Play the interval", line: "Count letters from the lit key. White keys only.", labels: true, rounds: 8, make: () => { const s = rnd(WHITES.filter(n => n >= 53 && n <= 65)); const k = 2 + Math.floor(Math.random() * 7); const t = whiteUp(s, k);
+    return { prompt: `A ${ORD[k]} above ${nm(s)}`, lit: [s], ok: n => n === t, show: [t], bad: () => "Count the start as 1." }; } }),
+  S.summary("5.1", "You can count intervals", ["Count letters, both ends included", "2nd, 3rd … 7th, octave", "Size is just the letter count"], "5.2"),
+];
+
+NEWL["5.2"] = [
+  S.intro(5, "Interval qualities", "Same size, different flavour."),
+  S.listen("Two kinds of 3rd", "Tap both.", [["Major 3rd: C–E", () => two(60, 64)], ["Minor 3rd: C–E♭", () => two(60, 63)]], "Major is 4 half steps. Minor is 3."),
+  S.info("Perfect", "4ths, 5ths and octaves are called perfect. They sound pure.", { play: () => two(60, 67, true) }),
+  S.info("Major and minor", "2nds, 3rds, 6ths and 7ths. Minor is one half step smaller.", { html: `<div class="toks">${["M2 2", "m3 3", "M3 4", "m6 8", "M6 9", "m7 10", "M7 11"].map(x => { const [a, b] = x.split(" "); return `<span class="tok">${a}<br><small>${b} half</small></span>`; }).join("")}</div>` }),
+  S.info("Augmented and diminished", "One half step wider or narrower. C to F♯ is the famous tritone.", { play: () => two(60, 66, true) }),
+  S.quiz("C up to E♭ is a…", ["Major 3rd", "Minor 3rd", "Perfect 4th"], 1, "Yes. 3 half steps."),
+  S.find({ title: "Build it", line: "Count half steps from the lit key.", labels: "all", rounds: 8, make: () => { const [name, st] = rnd(INTV.slice(0, 8)); const s = 55 + Math.floor(Math.random() * 10);
+    return { prompt: `${name[0].toUpperCase() + name.slice(1)} above ${nm(s)}`, lit: [s], ok: n => n === s + st, show: [s + st], bad: n => `That's ${n - s} half steps. You need ${st}.` }; } }),
+  S.summary("5.2", "You know interval qualities", ["Perfect: 4th, 5th, octave", "Major and minor: 2nds, 3rds, 6ths, 7ths", "Count half steps to be sure"], "5.3"),
+];
+
+const HOOKS = [["Major 2nd: Happy Birthday", 2], ["Major 3rd: When the Saints", 4], ["Perfect 4th: Here Comes the Bride", 5], ["Perfect 5th: Twinkle Twinkle", 7], ["Major 6th: My Bonnie", 9], ["Octave: Over the Rainbow", 12]];
+const earInt = (set, n = 8) => () => shuffle(range(0, n - 1).map(i => i % set.length)).map(a => { const s = 55 + Math.floor(Math.random() * 7); return { play: () => two(s, s + set[a][1]), answer: a }; });
+NEWL["5.3"] = [
+  S.intro(5, "Intervals by ear", "Hear the distance."),
+  S.listen("Song hooks", "Each one starts with that jump. Tap each.", HOOKS.map(([l, st]) => [l, () => two(60, 60 + st)]), "Hum the song to find the jump."),
+  S.ear({ title: "3rd, 5th or octave?", labels: ["3rd", "5th", "Octave"], rounds: earInt([["", 4], ["", 7], ["", 12]], 6), refs: [["3rd", () => two(60, 64)], ["5th", () => two(60, 67)], ["octave", () => two(60, 72)]] }),
+  S.ear({ title: "Four choices", labels: ["4th", "5th", "6th", "Octave"], rounds: earInt([["", 5], ["", 7], ["", 9], ["", 12]], 8), refs: [["4th", () => two(60, 65)], ["5th", () => two(60, 67)], ["6th", () => two(60, 69)], ["octave", () => two(60, 72)]] }),
+  S.echo({ title: "Hear it, play it", line: "The first note is lit. Find the second.", rounds: 5, showFirst: true, make: () => { const s = 55 + Math.floor(Math.random() * 6); return [s, s + rnd([2, 3, 4, 5, 7, 9, 12])]; } }),
+  S.summary("5.3", "You can hear intervals", ["Song hooks for each jump", "3rd, 4th, 5th, 6th, octave by ear", "Hear it, then play it"], "5.4"),
+];
+
+NEWL["5.4"] = [
+  S.intro(5, "Scale degrees by ear", "Hear each note's job in the key."),
+  S.info("Set the key", "A few chords tell your ear where home is.", { play: () => cadence(60) }),
+  S.listen("1, 3 and 5", "Tap each. The chords play first.", [["1: home", () => cadence(60, () => playNote(60, 1.2))], ["3: bright", () => cadence(60, () => playNote(64, 1.2))], ["5: open", () => cadence(60, () => playNote(67, 1.2))]], "1 feels finished. 5 feels like it wants more."),
+  S.ear({ title: "1, 3 or 5?", labels: ["1", "3", "5"], rounds: () => shuffle([0, 1, 2, 0, 1, 2]).map(a => ({ play: () => cadence(60, () => playNote(60 + [0, 4, 7][a], 1.2)), answer: a })) }),
+  S.ear({ title: "Any degree", labels: ["1", "2", "3", "4", "5", "6", "7"], rounds: () => shuffle([0, 1, 2, 3, 4, 5, 6, 4]).map(a => ({ play: () => cadence(60, () => playNote(60 + MAJOR[a], 1.2)), answer: a })) }),
+  S.find({ title: "Hear it, play it", line: "After the chords, play the note you heard.", labels: true, rounds: 6, hear: true, make: () => { const d = rnd([0, 2, 4, 5, 7, 9, 11]); const t = 60 + d;
+    return { prompt: "Which note?", play: () => cadence(60, () => playNote(t, 1.2)), ok: n => pc(n) === pc(t), show: [t], lit: [60], bad: () => "Listen again. Compare it with home (lit)." }; } }),
+  S.summary("5.4", "You can hear degrees", ["Chords set the key", "1 home, 5 open, 7 leans up", "Hear it, then find it"], "5.5"),
+];
+
+const stepMel = (len, wide) => { let n = 64; const out = [n]; for(let i = 1; i < len; i++){ n = Math.max(57, Math.min(72, n + rnd(wide ? [-4, -3, -2, -1, 1, 2, 3, 5] : [-2, -1, 1, 2]))); if(isBlack(n)) n++; out.push(n); } return out; };
+NEWL["5.5"] = [
+  S.intro(5, "Melodic dictation", "Hear a tune, play it back."),
+  S.info("Sing it first", "Then find the first note, and follow the ups and downs."),
+  S.echo({ title: "Three notes", line: "The first note is lit.", rounds: 4, showFirst: true, make: () => stepMel(3) }),
+  S.echo({ title: "Five notes", line: "Small steps only.", rounds: 4, showFirst: true, make: () => stepMel(5) }),
+  S.echo({ title: "Eight notes", line: "Some bigger jumps now.", rounds: 3, showFirst: true, make: () => stepMel(8, true) }),
+  S.summary("5.5", "You can play back tunes", ["Sing, then find", "Follow up and down", "Up to 8 notes"], "5.6"),
+];
+
+NEWL["5.6"] = [
+  S.intro(5, "Chord quality by ear", "Happy, sad, tense, dreamy."),
+  S.listen("Four qualities", "Tap each.", Object.entries(QUAL).map(([k, v]) => [k, () => chord(v.map(x => 60 + x), 1.6)]), "Major bright, minor sad, diminished tense, augmented dreamy."),
+  S.ear({ title: "Major or minor?", labels: ["Major", "Minor"], rounds: () => shuffle([0, 1, 0, 1, 0, 1]).map(a => { const r = 55 + Math.floor(Math.random() * 8); return { play: () => chord((a ? QUAL.Minor : QUAL.Major).map(x => r + x), 1.6), answer: a }; }) }),
+  S.ear({ title: "All four", labels: ["Major", "Minor", "Dim", "Aug"], rounds: () => shuffle([0, 1, 2, 3, 0, 1, 2, 3]).map(a => { const r = 55 + Math.floor(Math.random() * 8); return { play: () => chord(Object.values(QUAL)[a].map(x => r + x), 1.6), answer: a }; }),
+    refs: Object.entries(QUAL).map(([k, v]) => [k.toLowerCase(), () => chord(v.map(x => 60 + x), 1.4)]) }),
+  S.build({ title: "Hear it, build it", line: "Play the same kind of chord from the lit key.", labels: true, hear: true, rounds: 4, make: () => { const q = rnd(["Major", "Minor"]); const r = 55 + Math.floor(Math.random() * 6);
+    return { prompt: "Same quality", lit: [r], notes: QUAL[q].map(x => r + x), play: () => chord(QUAL[q].map(x => r + 5 + x), 1.4), good: `${q}!`, bad: "Not in that chord. Listen again." }; } }),
+  S.summary("5.6", "You can hear chord colour", ["Major and minor", "Diminished and augmented", "Hear it, then build it"], "5.7"),
+];
+
+const rdict = (title, pat, bpm, kickr) => S.rhythm({ kicker: kickr, title, line: "Tap Hear it. Then Start and tap it back.", pattern: pat, bpm, hidden: true });
+NEWL["5.7"] = [
+  S.intro(5, "Rhythm dictation", "Hear a rhythm, tap it back."),
+  rdict("Short rhythm", [1, 1, 2, 1, 1, 2], 80),
+  rdict("With eighths", [1, 0.5, 0.5, 1, 1, 0.5, 0.5, 2], 80, "Practice"),
+  rdict("With a rest", [1, -1, 0.5, 0.5, 1, 2, -2], 80, "Practice"),
+  S.ear({ kicker: "Stage check", title: "Mixed intervals", labels: ["3rd", "4th", "5th", "Octave"], rounds: earInt([["", 4], ["", 5], ["", 7], ["", 12]], 5) }),
+  S.echo({ kicker: "Stage check", title: "Play it back", line: "Four notes. First one lit.", rounds: 3, showFirst: true, make: () => stepMel(4) }),
+  S.ear({ kicker: "Stage check", title: "Chord quality", labels: ["Major", "Minor"], rounds: () => shuffle([0, 1]).map(a => ({ play: () => chord((a ? QUAL.Minor : QUAL.Major).map(x => 57 + x), 1.6), answer: a })) }),
+  S.summary("5.7", "Stage 5 complete!", ["You can name intervals by sight and ear", "You can play back short tunes", "You can hear chord quality and rhythm"], "6.1"),
+];
+
+// ===================== Stage 6: Chords and harmony =====================
+const tri = (r, q = "maj") => TRIAD[q].map(x => r + x);
+const QN = { maj: "major", min: "minor", dim: "diminished", aug: "augmented" };
+const RN = ["I", "ii", "iii", "IV", "V", "vi", "vii°"];
+const inKey = (root, deg, steps = MAJOR) => { const sc = [...steps, ...steps.map(x => x + 12)]; return [sc[deg], sc[deg + 2], sc[deg + 4]].map(x => root + x); };
+const playProg = (chs, gap = 700, dur = 0.65) => chs.forEach((c, i) => after(i * gap, () => chord(c, dur)));
+const near = (c, center = 62) => { const out = c.map(n => { let x = n; while(x - center > 6) x -= 12; while(center - x > 6) x += 12; return x; }); return out.sort((a, b) => a - b); };
+const progBuild = (title, line, root, degs, steps = MAJOR, names, kickr) => S.build({ kicker: kickr || " ", title, line, labels: true, rounds: degs.length, make: r => { const c = near(inKey(root, degs[r], steps));
+  return { prompt: names ? names[r] : RN[degs[r]], notes: c, pc: true, lit: r === 0 ? [] : [], good: "Yes!", bad: "Not in that chord." }; } });
+
+NEWL["6.1"] = [
+  S.intro(6, "Triads", "Three notes, stacked in 3rds."),
+  S.info("Stack 3rds", "Root, skip a white key, skip again: C E G.", { keys: true, labels: true, hints: tri(60), play: () => chord(tri(60), 1.6) }),
+  S.info("Major triad", "Major 3rd, then minor 3rd: 4 + 3 half steps.", { keys: true, labels: "all", hints: tri(60), play: () => chord(tri(60), 1.6) }),
+  S.info("Minor triad", "Minor 3rd, then major 3rd: 3 + 4.", { keys: true, labels: "all", hints: tri(60, "min"), play: () => chord(tri(60, "min"), 1.6) }),
+  S.listen("Diminished and augmented", "Two minor 3rds, or two major 3rds. Tap both.", [["Diminished: C E♭ G♭", () => chord(tri(60, "dim"), 1.6)], ["Augmented: C E G♯", () => chord(tri(60, "aug"), 1.6)]], "Tense, and dreamy."),
+  S.quiz("C, E♭, G is…", ["Major", "Minor", "Diminished"], 1, "Yes. Minor 3rd at the bottom."),
+  S.build({ title: "Build the triad", line: "From the lit root. One key at a time is fine.", labels: "all", rounds: 6, make: () => { const q = rnd(["maj", "maj", "min", "min", "dim", "aug"]); const r = 55 + Math.floor(Math.random() * 9);
+    return { prompt: `${nm(r, FLAT_KEYS.has(pc(r)))} ${QN[q]}`, lit: [r], notes: tri(r, q), good: `${nm(r)} ${QN[q]}!` }; } }),
+  S.summary("6.1", "You can build triads", ["Stacked 3rds: root, 3rd, 5th", "Major 4+3, minor 3+4", "Diminished 3+3, augmented 4+4"], "6.2"),
+];
+
+NEWL["6.2"] = [
+  S.intro(6, "Inversions", "Same chord, new order."),
+  S.info("Root position", "C E G. The root is at the bottom.", { keys: true, labels: true, hints: [60, 64, 67], play: () => chord([60, 64, 67], 1.4) }),
+  S.info("1st inversion", "E G C. The root moved to the top.", { keys: true, labels: true, hints: [64, 67, 72], play: () => chord([64, 67, 72], 1.4) }),
+  S.info("2nd inversion", "G C E. The 5th is at the bottom.", { keys: true, labels: true, hints: [55, 60, 64], play: () => chord([55, 60, 64], 1.4) }),
+  S.quiz("Which is C major in 1st inversion?", ["E G C", "G C E", "C E G"], 0, "Yes. 3rd at the bottom."),
+  S.info("Smooth moves", "C to F: keep C, move the other two a step.", { keys: true, labels: true, hints: [60, 64, 67], play: () => playProg([[60, 64, 67], [60, 65, 69]], 900, 0.85) }),
+  S.build({ title: "Move smoothly", line: "Each chord is close to the last. Play the lit keys.", labels: true, rounds: 4, make: r => { const c = [[60, 64, 67], [60, 65, 69], [59, 62, 67], [60, 64, 67]][r];
+    return { prompt: ["C", "F (C F A)", "G (B D G)", "C"][r], lit: c, notes: c, good: "Smooth!" }; } }),
+  S.build({ kicker: "Practice", title: "Now without lights", line: "C, F, G, C, with the fewest moves.", labels: true, rounds: 4, make: r => ({ prompt: ["C", "F", "G", "C"][r], notes: [[60, 64, 67], [60, 65, 69], [59, 62, 67], [60, 64, 67]][r], show: [[60, 64, 67], [60, 65, 69], [59, 62, 67], [60, 64, 67]][r], bad: "Stay close: keep shared notes still." }) }),
+  S.summary("6.2", "You can invert chords", ["Root, 1st and 2nd inversion", "Keep shared notes still", "Move others by a step"], "6.3"),
+];
+
+NEWL["6.3"] = [
+  S.intro(6, "Chords in a key", "Seven chords from one scale."),
+  S.info("A chord on every note", "Stack 3rds using only the scale's notes.", { play: () => playProg(range(0, 6).map(d => inKey(60, d)), 600, 0.55) }),
+  S.info("Roman numerals", "Capital = major, small = minor. ° = diminished.", { html: `<div class="toks">${RN.map((x, i) => `<span class="tok">${x}<br><small>${LETTERS[i]}</small></span>`).join("")}</div>` }),
+  S.quiz("In C major, IV is…", ["F major", "G major", "D minor"], 0, "Yes. Built on the 4th note, F."),
+  S.quiz("Which chords are major in a major key?", ["I, IV, V", "ii, iii, vi", "I, ii, V"], 0, "Right. The big three."),
+  S.build({ title: "Play the numeral", line: "Any octave or order is fine.", labels: true, rounds: 6, make: () => { const k = rnd(["C", "G", "F", "D"]); const d = rnd([0, 3, 4, 5, 1]); const c = near(inKey(KEYROOT[k], d));
+    return { prompt: `${RN[d]} in ${KEYLABEL[k]} major`, notes: c, pc: true, show: c, bad: `Count up from ${KEYLABEL[k]}.` }; } }),
+  S.summary("6.3", "You know the chords in a key", ["I IV V are major", "ii iii vi are minor", "vii° is diminished"], "6.4"),
+];
+
+const BLUES12 = [0, 0, 0, 0, 3, 3, 0, 0, 4, 3, 0, 0];
+NEWL["6.4"] = [
+  S.intro(6, "Common progressions", "The chord loops behind most songs."),
+  S.listen("Four famous loops", "Tap each.", [["I – IV – V – I", () => playProg([0, 3, 4, 0].map(d => near(inKey(60, d))))], ["I – V – vi – IV", () => playProg([0, 4, 5, 3].map(d => near(inKey(60, d))))], ["ii – V – I", () => playProg([1, 4, 0].map(d => near(inKey(60, d))))], ["12-bar blues", () => playProg(BLUES12.map(d => near(inKey(48, d), 55)), 420, 0.4)]], "You've heard all of these."),
+  S.quiz("The most-used pop loop?", ["I – V – vi – IV", "I – ii – iii – IV", "V – I – IV – ii"], 0, "Yes. Countless songs use it."),
+  progBuild("I – IV – V – I in C", "Play each chord. Any order of keys.", 60, [0, 3, 4, 0]),
+  progBuild("I – V – vi – IV in G", "Same idea, new key.", 55, [0, 4, 5, 3]),
+  progBuild("ii – V – I in F", "The jazz move.", 53, [1, 4, 0], MAJOR, null, "Practice"),
+  S.info("12-bar blues", "I I I I · IV IV I I · V IV I I.", { play: () => playProg(BLUES12.map(d => near(inKey(48, d), 55)), 420, 0.4) }),
+  S.summary("6.4", "You know the big progressions", ["I–IV–V–I", "I–V–vi–IV", "ii–V–I and the 12-bar blues"], "6.5"),
+];
+
+const AM = 57;
+NEWL["6.5"] = [
+  S.intro(6, "Minor-key harmony", "Chords from the minor scale."),
+  S.info("Chords in A minor", "i, iv and v: A minor, D minor, E minor.", { play: () => playProg([0, 3, 4, 0].map(d => near(inKey(AM, d, NAT_MIN)))) }),
+  S.info("Raise the 7th", "G becomes G♯, so v becomes V: E major.", { keys: true, labels: "all", hints: [64, 68, 71], play: () => playProg([[64, 68, 71], [57, 60, 64]], 900, 0.85) }),
+  S.listen("Hear the difference", "Tap both.", [["E minor → A minor", () => playProg([[64, 67, 71], [57, 60, 64]], 900, 0.85)], ["E major → A minor", () => playProg([[64, 68, 71], [57, 60, 64]], 900, 0.85)]], "The G♯ pulls much harder."),
+  S.quiz("In A minor, V uses which note?", ["G♯", "G", "F♯"], 0, "Yes. The raised 7th."),
+  progBuild("i – iv – V – i in A minor", "Am, Dm, E, Am.", AM, [0, 3, 4, 0], HARM_MIN, ["Am", "Dm", "E", "Am"]),
+  progBuild("Now in D minor", "Dm, Gm, A, Dm.", 50, [0, 3, 4, 0], HARM_MIN, ["Dm", "Gm", "A", "Dm"], "Practice"),
+  S.summary("6.5", "You can harmonize in minor", ["i, iv, v from natural minor", "Raised 7th makes V major", "V pulls hard to i"], "6.6"),
+];
+
+const S7 = (r, t) => SEVENTH[t].map(x => r + x);
+NEWL["6.6"] = [
+  S.intro(6, "Seventh chords", "Add one more 3rd on top."),
+  S.listen("Five sevenths on C", "Tap each.", Object.keys(SEVENTH).map(t => [`C${t}`, () => chord(S7(60, t), 1.8)]), "Each has its own colour."),
+  S.info("Dominant 7th", "G B D F. It wants to land on C.", { keys: true, labels: true, hints: S7(55, "7"), play: () => playProg([S7(55, "7"), [60, 64, 67]], 1000, 0.95) }),
+  S.quiz("G7 has which notes?", ["G B D F", "G B D F♯", "G B♭ D F"], 0, "Yes. Major triad plus a minor 7th."),
+  S.build({ title: "Build the 7th chord", line: "From the lit root.", labels: "all", rounds: 6, make: () => { const t = rnd(Object.keys(SEVENTH)); const r = 53 + Math.floor(Math.random() * 7);
+    return { prompt: `${nm(r, FLAT_KEYS.has(pc(r)))}${t}`, lit: [r], notes: S7(r, t) }; } }),
+  S.build({ kicker: "Practice", title: "Resolve it", line: "G7, then C.", labels: true, rounds: 2, make: r => r === 0 ? { prompt: "G7", notes: [55, 59, 62, 65] } : { prompt: "C", notes: [55, 60, 64], show: [55, 60, 64], good: "Resolved!" } }),
+  S.summary("6.6", "You know seventh chords", ["maj7, 7, m7, m7♭5, dim7", "Dominant 7 resolves home", "Four notes, stacked 3rds"], "6.7"),
+];
+
+const ALB = (c) => [c[0], c[2], c[1], c[2]];
+NEWL["6.7"] = [
+  S.intro(6, "Accompaniment patterns", "Ways to play chords under a tune."),
+  S.listen("Four patterns", "Tap each.", [["Block", () => playSeq([0, 1, 2, 3].map(i => ({ ns: [48, 52, 55], at: i, d: 0.9 })), 100)], ["Broken", () => playSeq(melody([48, 52, 55, 52, 48, 52, 55, 52], 0.5), 100)], ["Alberti bass", () => playSeq(melody([48, 55, 52, 55, 48, 55, 52, 55], 0.5), 100)], ["Arpeggio", () => playSeq(melody([48, 52, 55, 60, 64, 60, 55, 52], 0.5), 100)]], "Same chord, different feel."),
+  S.follow("Alberti bass", "Low, high, middle, high.", { seq: [...ALB([48, 52, 55]), ...ALB([48, 53, 57]), ...ALB([47, 50, 55]), ...ALB([48, 52, 55])], names: true, labels: true }),
+  S.follow("With a tune on top", "Keep the pattern. The app plays the melody.", { seq: [...ALB([48, 52, 55]), ...ALB([48, 52, 55]), ...ALB([47, 50, 55]), ...ALB([48, 52, 55])], labels: true, backMel: { 0: [64, 64], 4: [65, 67], 8: [65, 62], 12: [60, 60] }, backBeat: 1, bpm: 90, fitExtra: [67] }),
+  S.follow("Broken chords", "C, F, G, C, broken upward.", { seq: [48, 52, 55, 48, 53, 57, 47, 50, 55, 48, 52, 55], names: true, labels: true }),
+  S.summary("6.7", "You can accompany", ["Block, broken, Alberti, arpeggio", "Keep the pattern as chords change", "The melody sits on top"], "6.8"),
+];
+
+const CAD = { Authentic: [[3, 4, 0]], Half: [[0, 3, 4]], Deceptive: [[3, 4, 5]] };
+NEWL["6.8"] = [
+  S.intro(6, "Cadences and function", "How phrases end."),
+  S.info("Three jobs", "Tonic rests (I). Subdominant moves (IV). Dominant pulls (V)."),
+  S.listen("Four endings", "Tap each.", [["Authentic: V → I", () => playProg([3, 4, 0].map(d => near(inKey(60, d))))], ["Plagal: IV → I", () => playProg([0, 3, 0].map(d => near(inKey(60, d))))], ["Half: ends on V", () => playProg([0, 3, 4].map(d => near(inKey(60, d))))], ["Deceptive: V → vi", () => playProg([3, 4, 5].map(d => near(inKey(60, d))))]], "Full stop, amen, comma, surprise."),
+  S.ear({ title: "Which ending?", labels: Object.keys(CAD), rounds: () => shuffle([0, 1, 2, 0, 1, 2]).map(a => ({ play: () => playProg(Object.values(CAD)[a][0].map(d => near(inKey(60, d)))), answer: a })) }),
+  progBuild("Authentic cadence in G", "IV, V, I.", 55, [3, 4, 0], MAJOR, ["C", "D", "G"]),
+  S.summary("6.8", "You can hear how phrases end", ["Authentic V–I: full stop", "Half cadence: a comma on V", "Deceptive V–vi: surprise"], "6.9"),
+];
+
+const HB = [{ mel: [64, 64, 65, 67], a: 0 }, { mel: [67, 65, 64, 62], a: 2 }, { mel: [60, 60, 62, 64], a: 0 }, { mel: [64, 62, 62], a: 2 }];
+const CH3 = [[48, 52, 55], [48, 53, 57], [47, 50, 55]];
+NEWL["6.9"] = [
+  S.intro(6, "Harmonizing a melody", "Choosing chords under a tune."),
+  S.info("Match the melody", "Pick a chord that contains the main notes. C, E, G → C major."),
+  S.quiz("The melody holds an A. Which chord fits?", ["F major", "G major", "C major"], 0, "Yes. F A C contains A."),
+  S.ear({ title: "Pick the chord", line: "Hear the bar, then pick C, F or G.", labels: ["C", "F", "G"], rounds: () => HB.map(b => ({ play: () => { playSeq(melody(b.mel, 0.6), 100); }, answer: b.a })), refs: [["C", () => chord(CH3[0], 1)], ["F", () => chord(CH3[1], 1)], ["G", () => chord(CH3[2], 1)]] }),
+  S.info("Hear your choices", "Ode to Joy with C, G, C, G.", { play: () => { HB.forEach((b, i) => { after(i * 2400, () => { chord(CH3[b.a], 2.2); playSeq(melody(b.mel, 1), 100); }); }); } }),
+  S.build({ kicker: "Stage check", title: "Accompany the tune", line: "Each bar: hear it, then play a chord that fits.", labels: true, hear: true, rounds: 4, make: r => { const b = HB[r];
+    return { prompt: `Bar ${r + 1}: ${b.mel.map(n => nm(n)).join(" ")}`, notes: CH3[b.a], pc: true, play: () => playSeq(melody(b.mel, 0.6), 100), bad: "That note clashes with the melody.", good: ["C!", "G!", "C!", "G!"][r] }; } }),
+  S.summary("6.9", "Stage 6 complete!", ["You can build any common chord", "You can move between chords smoothly", "You can choose chords for a melody"], "7.1"),
+];
+
+// ===================== Stage 7: Technique and dynamics =====================
+// articulation: legato = next key pressed as (or before) the last one lets go; staccato = short notes with gaps
+S.artic = o => ({ keys: true, labels: o.labels, render(){
+  const seq = o.seq; let k = 0, ev = [];
+  h(`${kick(o.kicker || "Practice")}<h1>${o.title}</h1><p>${o.line}</p>
+    <div class="toks">${seq.map((n, i) => `<span class="tok" data-t="${i}">${nm(n)}</span>`).join("")}</div>
+    <div class="row" style="justify-content:center;margin-top:10px"><button class="btn ghost" id="hear">Hear it</button></div>
+    <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+  fitKeys(Math.min(...seq), Math.max(...seq));
+  const show = () => { screenEl.querySelectorAll(".tok").forEach((t, i) => { t.classList.toggle("cur", i === k); t.classList.toggle("done", i < k); }); setHints(k < seq.length ? [seq[k]] : []); };
+  $("#hear").onclick = () => { clearLater(); playSeq(seq.map((n, i) => ({ n, at: i * 0.5, d: o.mode === "legato" ? 0.55 : 0.15 })), 100); };
+  show();
+  const judge = () => { let ok = 0; for(let i = 0; i < ev.length; i++){ const e = ev[i], nx = ev[i + 1]; const len = (e.off || e.on + 0.05) - e.on;
+      if(o.mode === "legato"){ if(!nx || (e.off || 99) >= nx.on - 0.2) ok++; } else { if(len < 0.22 && (!nx || nx.on - (e.off || e.on) > 0.08)) ok++; } }
+    const pct = ok / ev.length; if(pct >= 0.7){ fb("good", `${Math.round(pct * 100)}% ${o.mode}. Nice.`); score(1, 1); enableNext(); }
+    else { fb("bad", o.mode === "legato" ? "Some gaps. Hold each key until the next one sounds." : "Some notes too long. Let go quickly."); k = 0; ev = []; show(); } };
+  this.onNote = n => { if(k >= seq.length) return; if(n !== seq[k]){ flash(n, "no"); return; } ev.push({ n, on: ctx.currentTime }); k++; show(); };
+  const off = n => { const e = [...ev].reverse().find(x => x.n === n && !x.off); if(e){ e.off = ctx.currentTime; if(k >= seq.length && ev.every(x => x.off)) judge(); } };
+  releaseHooks.add(off);
+  this.auto = () => { if(k >= seq.length) return; const i = k, n = seq[i]; press(n); if(o.mode === "legato"){ if(i > 0) release(seq[i - 1]); if(i === seq.length - 1) after(200, () => release(n)); } else after(60, () => release(n)); };
+  this.cleanup = () => { releaseHooks.delete(off); setHints([]); clearLater(); };
+} });
+// voicing: play each chord note; the top (melody) note must be clearly louder
+S.voice = o => ({ keys: true, labels: o.labels, render(){
+  const N = o.chords.length; let r = 0, right = 0, got = new Map();
+  h(`<div class="kicker">${o.kicker || "Practice"}</div><h1>${o.title}</h1><p>${o.line || "Top note loud, the others soft. On screen, tap low for loud."}</p>
+    <div class="card"><div class="row" style="justify-content:space-between"><span class="muted" id="rd">1 / ${N}</span><span class="muted" id="sc">0 right</span></div><div class="prompt" id="pr"></div></div>
+    <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+  fitKeys(48, 72);
+  const next = () => { got = new Map(); keyEls.forEach(e => e.classList.remove("got")); if(r >= N){ setHints([]); fb("good", `${right} of ${N} voiced well.`); score(right, N); enableNext(); return; }
+    $("#rd").textContent = `${r + 1} / ${N}`; $("#pr").innerHTML = `Top: <b>${nm(Math.max(...o.chords[r]))}</b>`; setHints(o.chords[r]); fb("", ""); };
+  this.onNote = (n, v) => { const c = o.chords[r]; if(!c || !c.includes(n)) { if(c) flash(n, "no"); return; } got.set(n, v); keyEls.get(n)?.classList.add("got");
+    if(got.size === c.length){ const top = Math.max(...c); const others = c.filter(x => x !== top).map(x => got.get(x)); const ok = got.get(top) > Math.max(...others) + 0.15;
+      if(ok){ right++; $("#sc").textContent = `${right} right`; fb("good", "The melody sings on top."); r++; after(1100, next); } else { fb("bad", "Make the top note louder than the rest. Try again."); got = new Map(); keyEls.forEach(e => e.classList.remove("got")); } } };
+  this.auto = () => { const c = o.chords[r]; if(!c) return; const top = Math.max(...c); const n = c.find(x => !got.has(x)); if(n !== undefined){ press(n, n === top ? 0.95 : 0.3); release(n); } };
+  next(); this.cleanup = () => { setHints([]); clearLater(); keyEls.forEach(e => e.classList.remove("got")); };
+} });
+
+const HANON = [60, 64, 65, 67, 69, 67, 65, 64];
+const hanonCells = k => range(0, k - 1).flatMap(i => HANON.map(n => WHITES[WHITES.indexOf(n) + i]));
+NEWL["7.1"] = [
+  S.intro(7, "Finger independence", "Every finger strong and even."),
+  S.info("A climbing pattern", "One shape, moved up a step each time.", { play: () => playSeq(melody(hanonCells(3), 0.5), 120) }),
+  S.follow("Five fingers, mixed", "Keep all five fingers over their keys.", { seq: [60, 64, 62, 65, 64, 67, 65, 62, 60], fingers: [1, 3, 2, 4, 3, 5, 4, 2, 1] }),
+  S.follow("The climbing shape", "Same fingers each time: 1 3 4 5 5 4 3 2.", { seq: hanonCells(3), names: true, labels: true }),
+  S.even({ title: "Even fingers", line: "Two notes per click.", seq: HANON.concat([60]), bpm: 70, sub: 2 }),
+  S.even({ title: "Up one step", line: "Same shape from D.", seq: hanonCells(2).slice(8).concat([62]), bpm: 70, sub: 2 }),
+  S.summary("7.1", "Your fingers are getting even", ["Patterns train every finger", "Same shape, moved up", "Two notes per click, steady"], "7.2"),
+];
+
+const CUP = scaleNotes(60, MAJOR), CLOWUP = scaleNotes(48, MAJOR);
+NEWL["7.2"] = [
+  S.intro(7, "Scales hands together", "Two hands, one scale."),
+  S.info("Parallel motion", "Both hands go the same way, an octave apart.", { play: () => playSeq(CUP.map((n, i) => ({ ns: [n, n - 12], at: i * 0.5, d: 0.5 })), 110) }),
+  S.follow("Parallel: you play right", "The app plays your left hand. With a MIDI keyboard, play both.", { seq: CUP, names: true, labels: true, backing: Object.fromEntries(CUP.map((n, i) => [i, [n - 12]])), backDur: 0.5 }),
+  S.follow("Parallel: you play left", "The app plays the right hand.", { seq: CLOWUP, names: true, labels: true, backing: Object.fromEntries(CLOWUP.map((n, i) => [i, [n + 12]])), backDur: 0.5 }),
+  S.info("Contrary motion", "Start together, move apart like a mirror.", { play: () => playSeq(CUP.map((n, i) => ({ ns: [n, 120 - n], at: i * 0.5, d: 0.5 })), 110) }),
+  S.follow("Contrary: you play right", "The app mirrors you going down.", { seq: CUP, names: true, labels: true, backing: Object.fromEntries(CUP.map((n, i) => [i, [scaleNotes(48, MAJOR).reverse()[i] + 0]])), backDur: 0.5 }),
+  S.summary("7.2", "You can play hands together", ["Parallel: same direction", "Contrary: mirror image", "The app holds the other hand on screen"], "7.3"),
+];
+
+const ARP = (r, q = "maj") => [r, r + TRIAD[q][1], r + TRIAD[q][2], r + 12, r + 12 + TRIAD[q][1], r + 12 + TRIAD[q][2], r + 24];
+NEWL["7.3"] = [
+  S.intro(7, "Arpeggios", "Chords spread out, one note at a time."),
+  S.info("Wide thumb-under", "C E G C: the thumb crosses after finger 3.", { play: () => playSeq(melody(updown(ARP(48)), 0.5), 120) }),
+  S.follow("C major arpeggio", "Two octaves up and down.", { seq: updown(ARP(48)), names: true, labels: true, demo: true, bpm: 120 }),
+  S.follow("A minor arpeggio", "Same shape, minor chord.", { seq: updown(ARP(45, "min")).filter(n => n >= 45), names: true, labels: true, demo: true, bpm: 120 }),
+  S.follow("G major arpeggio", "Watch for B.", { seq: updown(ARP(43)), names: true, labels: true }),
+  S.even({ title: "Arpeggio in time", line: "Two notes per click.", seq: updown(ARP(48)), bpm: 66, sub: 2 }),
+  S.summary("7.3", "You can play arpeggios", ["Chord notes, one by one", "Thumb crosses after 3", "Major and minor shapes"], "7.4"),
+];
+
+const FIVE = [60, 62, 64, 65, 67, 65, 64, 62, 60];
+NEWL["7.4"] = [
+  S.intro(7, "Speed building", "Faster, a little at a time."),
+  S.info("Tempo ladder", "Pass at one tempo, then add a few BPM."),
+  S.even({ title: "Rung 1: 80 BPM", line: "Two notes per click.", seq: FIVE, bpm: 80, sub: 2 }),
+  S.even({ title: "Rung 2: 92 BPM", line: "A little faster.", seq: FIVE, bpm: 92, sub: 2 }),
+  S.even({ title: "Rung 3: 104 BPM", line: "Faster again.", seq: FIVE, bpm: 104, sub: 2 }),
+  S.info("Short bursts", "Play a fast group, then rest. Your hand learns the shape."),
+  S.even({ kicker: "Practice", title: "Burst", line: "Four quick notes, four clicks of rest.", seq: [60, 62, 64, 65], bpm: 90, sub: 4, limit: 70 }),
+  S.summary("7.4", "You're getting faster", ["Climb in small steps", "Only speed up when it's even", "Short bursts teach the shape"], "7.5"),
+];
+
+NEWL["7.5"] = [
+  S.intro(7, "Dynamic control", "Hit the loudness you want."),
+  S.dyn({ title: "Hit the target", rounds: shuffle([0, 1, 2, 0, 1, 2, 1, 0]) }),
+  S.dyn({ kicker: "Practice", title: "Crescendo", line: "Six notes, getting louder.", rounds: [0, 0, 1, 1, 2, 2] }),
+  S.dyn({ kicker: "Practice", title: "Diminuendo", line: "Six notes, getting softer.", rounds: [2, 2, 1, 1, 0, 0] }),
+  S.dyn({ kicker: "Practice", title: "Read the marks", marks: true, rounds: [1, 2, 0, 2, 1, 0] }),
+  S.summary("7.5", "You control loudness", ["Soft, medium, loud on demand", "Smooth crescendo and diminuendo", "On a MIDI keyboard it's real force"], "7.6"),
+];
+
+NEWL["7.6"] = [
+  S.intro(7, "Articulation", "Smooth or detached."),
+  S.listen("Legato and staccato", "Tap both.", [["Legato: smooth", () => playSeq(FIVE.slice(0, 5).map((n, i) => ({ n, at: i * 0.5, d: 0.55 })), 100)], ["Staccato: short", () => playSeq(FIVE.slice(0, 5).map((n, i) => ({ n, at: i * 0.5, d: 0.12 })), 100)]], "Same notes, different touch."),
+  S.info("Legato", "Hold each key until the next one sounds."),
+  S.artic({ title: "Play legato", line: "No gaps. On screen, tap the next key as you let go.", mode: "legato", seq: FIVE }),
+  S.info("Staccato", "Short and bouncy. Let go right away. Shown as a dot over the note."),
+  S.artic({ title: "Play staccato", line: "Short, with little gaps.", mode: "staccato", seq: FIVE }),
+  S.summary("7.6", "You control touch", ["Legato: connected", "Staccato: short and detached", "Measured from when you let go"], "7.7"),
+];
+
+NEWL["7.7"] = [
+  S.intro(7, "Evenness at speed", "Steady when it's fast."),
+  S.info("Reading the chart", "Each dot is a note. Above the line is late, below is early. Green is right on."),
+  S.even({ title: "100 BPM", line: "Two notes per click.", seq: updown(scaleNotes(60, MAJOR)), bpm: 100, sub: 2, limit: 70 }),
+  S.even({ title: "120 BPM", line: "Keep it even.", seq: FIVE.concat(FIVE.slice(1)), bpm: 120, sub: 2, limit: 70 }),
+  S.summary("7.7", "You can stay steady", ["Watch the drift chart", "Green dots are on time", "Even first, then fast"], "7.8"),
+];
+
+NEWL["7.8"] = [
+  S.intro(7, "Voicing", "The melody louder than the chord."),
+  S.listen("Hear the difference", "Tap both.", [["Flat: all equal", () => [55, 60, 64].forEach(n => { noteOnSound(n, 0.6); after(1200, () => noteOffSound(n)); })], ["Voiced: top louder", () => [[55, 0.3], [60, 0.3], [64, 1]].forEach(([n, v]) => { noteOnSound(n, v); after(1200, () => noteOffSound(n)); })]], "The top note sings out."),
+  S.voice({ title: "Bring out the top", chords: [[55, 60, 64], [57, 60, 65], [55, 59, 62], [55, 60, 64]] }),
+  S.even({ kicker: "Stage check", title: "A study in time", line: "Scale up and down, two notes per click.", seq: updown(scaleNotes(55, MAJOR)), bpm: 84, sub: 2, limit: 75 }),
+  S.dyn({ kicker: "Stage check", title: "With a dynamics curve", line: "Soft, rise, then fall.", rounds: [0, 1, 2, 1, 0] }),
+  S.artic({ kicker: "Stage check", title: "Then staccato", line: "Short and light.", mode: "staccato", seq: [67, 65, 64, 62, 60] }),
+  S.summary("7.8", "Stage 7 complete!", ["Even fingers at speed", "Loudness on demand", "Legato, staccato and voicing"], "8.1"),
+];
+
+// ===================== Stage 8: Applied =====================
+const SYM = { "": [0, 4, 7], m: [0, 3, 7], "7": [0, 4, 7, 10], maj7: [0, 4, 7, 11], m7: [0, 3, 7, 10], dim: [0, 3, 6], sus4: [0, 5, 7], sus2: [0, 2, 7], add9: [0, 4, 7, 14], "6": [0, 4, 7, 9] };
+const ROOTS = { C: 0, "C♯": 1, "D♭": 1, D: 2, "E♭": 3, E: 4, F: 5, "F♯": 6, G: 7, "A♭": 8, A: 9, "B♭": 10, B: 11 };
+function parseSym(s){ const m = s.match(/^([A-G][♯♭]?)(.*?)(?:\/([A-G][♯♭]?))?$/); const r = 48 + ROOTS[m[1]] + (ROOTS[m[1]] < 5 ? 12 : 0); const ns = SYM[m[2]].map(x => r + x); if(m[3]){ let b = 48 + ROOTS[m[3]]; while(b >= ns[0]) b -= 12; ns.unshift(b); } return ns; }
+const symChord = s => chord(parseSym(s), 1.4);
+// answer a phrase: any notes from the scale, same count
+S.answer = o => ({ keys: true, labels: o.labels, render(){
+  const N = o.rounds || 4; let r = 0, cur = null, got = [];
+  h(`<div class="kicker">${o.kicker || "Practice"}</div><h1>${o.title}</h1><p>${o.line}</p>
+    <div class="card"><div class="row" style="justify-content:space-between"><span class="muted" id="rd">1 / ${N}</span><span class="muted" id="sc"></span></div><div class="dots" id="dots"></div>
+    <div class="row" style="justify-content:center"><button class="btn ghost" id="hear">Hear the call</button></div></div>
+    <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+  fitKeys(48, 72); const sc = new Set(o.scale.map(pc)); setHints(range(base, base + 24).filter(n => sc.has(pc(n))));
+  const dots = () => $("#dots").innerHTML = cur ? cur.map((_, i) => `<i class="${i < got.length ? "on" : ""}"></i>`).join("") : "";
+  const hear = () => cur && playSeq(melody(cur, 0.5), 110);
+  const next = () => { if(r >= N){ fb("good", "Great conversation!"); score(1, 1); enableNext(); cur = null; return; } cur = o.make(r); got = []; $("#rd").textContent = `${r + 1} / ${N}`; dots(); fb("", "Your answer: " + cur.length + " notes."); hear(); };
+  $("#hear").onclick = hear;
+  this.onNote = n => { if(!cur) return; if(!sc.has(pc(n))) flash(n, "no"); got.push(n); dots();
+    if(got.length >= cur.length){ const end = pc(got[got.length - 1]); fb("good", end === pc(o.scale[0]) ? "Strong ending on home!" : "Nice answer."); r++; cur = null; after(1300, next); } };
+  this.auto = () => { if(!cur) return; const n = o.scale[got.length % o.scale.length]; press(n); release(n); };
+  after(500, next); this.cleanup = () => { setHints([]); clearLater(); };
+} });
+// record a tune over a chord loop; show it as notes, play back, save as MIDI
+function midiFile(notes, bpm){ const tpq = 480, ev = []; notes.forEach(x => { ev.push([x.t, 0x90, x.n, Math.round(30 + x.v * 90)]); ev.push([x.t + x.d, 0x80, x.n, 0]); }); ev.sort((a, b) => a[0] - b[0]);
+  const vlq = v => { const b = [v & 0x7f]; while(v >>= 7) b.unshift((v & 0x7f) | 0x80); return b; };
+  let last = 0; const trk = [0, 0xff, 0x51, 3, ...(n => [(n >> 16) & 255, (n >> 8) & 255, n & 255])(Math.round(60e6 / bpm))];
+  ev.forEach(([t, s, n, v]) => { const tk = Math.round(t / (60 / bpm) * tpq); trk.push(...vlq(Math.max(0, tk - last)), s, n, v); last = tk; }); trk.push(0, 0xff, 0x2f, 0);
+  const u32 = n => [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255];
+  return new Uint8Array([0x4d, 0x54, 0x68, 0x64, 0, 0, 0, 6, 0, 0, 0, 1, 1, 224, 0x4d, 0x54, 0x72, 0x6b, ...u32(trk.length), ...trk]); }
+S.record = o => ({ keys: true, labels: o.labels, render(){
+  const bpm = o.bpm || 90, bars = o.chords.length, spb = 60 / bpm; let m = null, rec = [], t0 = 0, on = false; const open = new Map();
+  h(`${kick(o.kicker || "Create")}<h1>${o.title}</h1><p>${o.line}</p>
+    <div class="card" style="text-align:center"><div class="chordrow" id="crow">${o.names.map((c, i) => `<span>${c}</span>`).join("")}</div>
+    <div class="row" style="justify-content:center;margin-top:12px;gap:10px"><button class="btn" id="go">Record</button><button class="btn ghost" id="pb" disabled>Play back</button><button class="btn ghost" id="dl" disabled>Save MIDI</button></div>
+    <div class="staff" id="stf"></div></div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+  fitKeys(48, 72); setHints(range(48, 72).filter(n => [0, 2, 4, 7, 9].includes(pc(n)) && n >= 60));
+  const finish = () => { on = false; m?.stop(); open.forEach((x, n) => { x.d = ctx.currentTime - t0 - x.t; }); open.clear(); $("#go").textContent = "Record again";
+    if(rec.length < 6){ fb("bad", "Play at least 6 notes. Try again."); return; }
+    $("#pb").disabled = false; $("#dl").disabled = false;
+    const q = rec.slice(0, 16).map(x => ({ n: x.n, d: x.d > spb * 1.5 ? "h" : x.d > spb * 0.75 ? "q" : "8" }));
+    drawStaff($("#stf"), { time: "4/4", notes: q });
+    fb("good", `Your tune: ${rec.length} notes. Play it back or save it.`); score(1, 1); enableNext(); };
+  $("#go").onclick = () => { rec = []; open.clear(); on = true; $("#go").textContent = "Recording…"; fb("", "4 clicks, then play over the chords.");
+    m = metro(bpm, { beats: 4, total: 4 + bars * 4, onBeat: b => { if(b === 4) t0 = ctx.currentTime; if(b >= 4 && (b - 4) % 4 === 0){ const ci = (b - 4) / 4; screenEl.querySelectorAll("#crow span").forEach((s, i) => s.classList.toggle("on", i === ci)); o.chords[ci].forEach(n => { noteOnSound(n, 0.38); after(spb * 3800, () => noteOffSound(n)); }); } } });
+    after((4 + bars * 4) * spb * 1000 + 400, finish); };
+  $("#pb").onclick = () => { clearLater(); rec.forEach(x => after(x.t * 1000, () => { noteOnSound(x.n, x.v); after(Math.max(150, x.d * 1000), () => noteOffSound(x.n)); })); o.chords.forEach((c, i) => after(i * 4 * spb * 1000, () => chord(c, 4 * spb * 0.95))); };
+  $("#dl").onclick = () => { const blob = new Blob([midiFile(rec, bpm)], { type: "audio/midi" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "my-keyplay-tune.mid"; a.click(); };
+  this.onNote = (n, v) => { if(!on || !t0) return; const x = { n, v, t: ctx.currentTime - t0, d: spb }; rec.push(x); open.set(n, x); };
+  const off = n => { const x = open.get(n); if(x){ x.d = ctx.currentTime - t0 - x.t; open.delete(n); } }; releaseHooks.add(off);
+  this.auto = () => { $("#go").click(); [60, 62, 64, 67, 64, 62, 60, 67, 69, 67, 64, 60].forEach((n, i) => after((4 + i * 1.5) * spb * 1000 + 300, () => { press(n); after(300, () => release(n)); })); };
+  this.cleanup = () => { m?.stop(); clearLater(); setHints([]); releaseHooks.delete(off); };
+} });
+
+const POPLOOP = [[48, 52, 55], [43, 47, 50], [45, 48, 52], [41, 45, 48]].map(c => c.map(n => n + 12 - 12));
+const BL12 = BLUES12.map(d => [[48, 52, 55, 58], [53, 57, 60, 63], [55, 59, 62, 65]][[0, 3, 4].indexOf(d)]);
+NEWL["8.1"] = [
+  S.intro(8, "Chord symbols", "Read chords like a lead sheet."),
+  S.info("Letter means major", "C is C major. Am is A minor.", { play: () => { symChord("C"); after(1300, () => symChord("Am")); } }),
+  S.info("7 and maj7", "G7 is a dominant 7th. Cmaj7 is a major 7th.", { play: () => { symChord("G7"); after(1500, () => symChord("Cmaj7")); } }),
+  S.info("Slash chords", "G/B: a G chord with B at the bottom.", { keys: true, labels: true, hints: parseSym("G/B"), play: () => symChord("G/B") }),
+  S.quiz("What is Dm?", ["D minor", "D major", "D 7th"], 0, "Yes. Small m means minor."),
+  S.build({ title: "Play the symbol", line: "Any octave or order is fine.", labels: "all", rounds: 8, make: () => { const s = rnd(["C", "Am", "F", "G", "Dm", "Em", "G7", "Cmaj7", "Am7", "D", "E", "B♭"]); const ns = parseSym(s);
+    return { prompt: s, notes: ns, pc: true, show: ns, good: `${s}!` }; } }),
+  S.summary("8.1", "You can read chord symbols", ["Letter = major, m = minor", "7, maj7, m7", "Slash = bass note"], "8.2"),
+];
+
+const TW = [60, 60, 67, 67, 69, 69, 67, 65, 65, 64, 64, 62, 62, 60];
+NEWL["8.2"] = [
+  S.intro(8, "Melody plus chords", "Right hand tune, left hand roots."),
+  S.info("Shells", "The left hand can play just the root. Or root and 7th."),
+  S.follow("Lead sheet: right hand", "Play Twinkle. The app plays the roots: C, F, C, G, C.", { seq: TW, names: true, labels: true, backing: { 0: [48], 4: [53], 6: [48], 7: [53], 9: [48], 11: [43], 13: [48] }, backDur: 1.4 }),
+  S.follow("Lead sheet: left hand", "Play the roots. The app plays the tune.", { seq: [48, 53, 48, 53, 48, 43, 48], names: true, labels: true, backMel: { 0: TW.slice(0, 4), 1: TW.slice(4, 6), 2: TW.slice(6, 7), 3: TW.slice(7, 9), 4: TW.slice(9, 11), 5: TW.slice(11, 13), 6: TW.slice(13) }, backBeat: 0.6, bpm: 100, fitExtra: [69] }),
+  S.info("Both hands", "With a MIDI keyboard, play both. On screen, take turns: root, then tune."),
+  S.follow("Take turns", "Root, then two melody notes.", { seq: [48, 60, 60, 48, 67, 67, 53, 69, 69, 48, 67], names: true, labels: true }),
+  S.summary("8.2", "You can play a lead sheet", ["Melody in the right hand", "Roots or shells in the left", "Chord symbols tell you which"], "8.3"),
+];
+
+NEWL["8.3"] = [
+  S.intro(8, "Improvising with pentatonics", "Five safe notes over a band."),
+  S.info("Safe notes", "C D E G A fit over C, G, Am and F.", { keys: true, labels: true, hints: range(48, 72).filter(n => PENTA.includes(pc(n))) }),
+  S.jam({ title: "Jam with lights", line: "Play any lit keys. Make it up!", chords: POPLOOP, names: ["C", "G", "Am", "F"], scale: PENTA, bpm: 96, need: 24 }),
+  S.info("Make phrases", "Play a few notes, then rest. Repeat an idea, then change it."),
+  S.jam({ title: "Jam without lights", line: "Same five notes. Red means outside.", chords: POPLOOP, names: ["C", "G", "Am", "F"], scale: PENTA, bpm: 96, need: 24, light: false }),
+  S.summary("8.3", "You improvised!", ["Pentatonic notes always fit", "Phrases and rests", "Repeat, then vary"], "8.4"),
+];
+
+NEWL["8.4"] = [
+  S.intro(8, "The blues", "Twelve bars and a blue note."),
+  S.info("Twelve bars", "I I I I · IV IV I I · V IV I I.", { play: () => playProg(BL12, 420, 0.4) }),
+  S.jam({ title: "Blues jam", line: "Use the lit blues notes over 12 bars.", chords: BL12, names: ["C7", "C7", "C7", "C7", "F7", "F7", "C7", "C7", "G7", "F7", "C7", "C7"], scale: BLUES.map(x => 60 + x), bpm: 120, need: 24, beatsPer: 2, showChordTones: true }),
+  S.info("Land on chord notes", "End a phrase on a note of the chord. It sounds strong."),
+  S.jam({ kicker: "Practice", title: "Aim for chord notes", line: "Watch the count of chord notes go up.", chords: BL12, names: ["C7", "C7", "C7", "C7", "F7", "F7", "C7", "C7", "G7", "F7", "C7", "C7"], scale: BLUES.map(x => 60 + x), bpm: 120, need: 24, beatsPer: 2, showChordTones: true }),
+  S.summary("8.4", "You played the blues", ["The 12-bar form", "Blues scale over it", "Land on chord notes"], "8.5"),
+];
+
+const callP = () => { const ps = [60, 62, 64, 67, 69, 72]; let i = 2; return range(1, 4).map(() => { i = Math.max(0, Math.min(5, i + rnd([-1, 1, 2, -2]))); return ps[i]; }); };
+NEWL["8.5"] = [
+  S.intro(8, "Call and response", "Answer a musical phrase."),
+  S.echo({ title: "Copy the call", line: "Play it back exactly. First note lit.", rounds: 3, showFirst: true, make: callP }),
+  S.info("Same rhythm, new notes", "An answer keeps the shape but changes the ending."),
+  S.answer({ title: "Answer it", line: "After the call, play 4 notes of your own. End on C for a strong finish.", scale: [60, 62, 64, 67, 69], rounds: 4, make: callP }),
+  S.summary("8.5", "You can answer phrases", ["Copy to learn", "Answer with the same length", "End on home to finish"], "8.6"),
+];
+
+NEWL["8.6"] = [
+  S.intro(8, "Writing your own tune", "Build an 8-bar melody over chords."),
+  S.info("Plan it", "Start and end on C. Mostly steps, one or two jumps."),
+  S.record({ title: "Record your tune", line: "Tap Record. Play over C, Am, F, G (twice).", chords: [[48, 52, 55], [45, 48, 52], [41, 45, 48], [43, 47, 50], [48, 52, 55], [45, 48, 52], [41, 45, 48], [43, 47, 50]], names: ["C", "Am", "F", "G", "C", "Am", "F", "G"], bpm: 100 }),
+  S.summary("8.6", "You wrote a tune", ["Plan the start and end", "Record over chords", "Save it as a MIDI file"], "8.7"),
+];
+
+const ODE2 = [64, 64, 65, 67, 67, 65, 64, 62];
+NEWL["8.7"] = [
+  S.intro(8, "Playing by ear", "Work out a tune you know."),
+  S.info("First note, then direction", "Find the first note. Then: up or down? Step or jump?"),
+  S.echo({ title: "Ode to Joy, part 1", line: "First note lit. Find the rest by ear.", rounds: 1, showFirst: true, make: () => ODE2.slice(0, 4) }),
+  S.echo({ title: "Ode to Joy, part 2", line: "Keep going.", rounds: 1, showFirst: true, make: () => ODE2.slice(4) }),
+  S.echo({ title: "Twinkle, by ear", line: "First note lit.", rounds: 1, showFirst: true, make: () => TW.slice(0, 7) }),
+  S.follow("Lead sheet", "Play the tune. The app plays the roots.", { kicker: "Stage check", seq: TW, names: true, lights: false, backing: { 0: [48], 4: [53], 6: [48], 7: [53], 9: [48], 11: [43], 13: [48] }, backDur: 1.4 }),
+  S.jam({ kicker: "Stage check", title: "12-bar solo", line: "Improvise over one chorus of blues.", chords: BL12, names: ["C7", "C7", "C7", "C7", "F7", "F7", "C7", "C7", "G7", "F7", "C7", "C7"], scale: BLUES.map(x => 60 + x), bpm: 120, need: 24, beatsPer: 2, light: false }),
+  S.summary("8.7", "Stage 8 complete!", ["You can play from chord symbols", "You can improvise over a band", "You can write and save your own tune"], "9.1"),
+];
+
+// ===================== Stage 9: Advanced =====================
+const EXT = { maj9: [0, 4, 7, 11, 14], "9": [0, 4, 7, 10, 14], m9: [0, 3, 7, 10, 14], "13": [0, 4, 10, 14, 21], m11: [0, 3, 10, 14, 17], sus4: [0, 5, 7], sus2: [0, 2, 7], add9: [0, 4, 7, 14] };
+const ext = (r, t) => EXT[t].map(x => r + x);
+const MODES = { Ionian: MAJOR, Dorian: [0, 2, 3, 5, 7, 9, 10], Phrygian: [0, 1, 3, 5, 7, 8, 10], Lydian: [0, 2, 4, 6, 7, 9, 11], Mixolydian: [0, 2, 4, 5, 7, 9, 10], Aeolian: NAT_MIN, Locrian: [0, 1, 3, 5, 6, 8, 10] };
+const withDrone = (root, steps) => { noteOnSound(root - 12, 0.5); after(3600, () => noteOffSound(root - 12)); playSeq(melody(scaleNotes(root, steps), 0.45), 120); };
+const IIVI = [[53, 57, 60, 64], [53, 57, 59, 64], [52, 55, 59, 62]];
+const tr = (c, k) => c.map(n => n + k).map(n => n > 70 ? n - 12 : n);
+
+NEWL["9.1"] = [
+  S.intro(9, "Extended chords", "9ths, 11ths, 13ths, sus and add."),
+  S.info("Past the octave", "Keep stacking 3rds. The 9th is the 2nd, an octave up.", { keys: true, labels: "all", hints: ext(48, "maj9"), play: () => chord(ext(48, "maj9"), 2) }),
+  S.listen("New colours", "Tap each.", [["Cmaj9", () => chord(ext(48, "maj9"), 2)], ["C9", () => chord(ext(48, "9"), 2)], ["Cm9", () => chord(ext(48, "m9"), 2)], ["C13", () => chord(ext(48, "13"), 2)]], "Richer than triads. Jazz lives here."),
+  S.listen("Sus and add", "Tap each.", [["Csus4: C F G", () => chord(ext(60, "sus4"), 1.6)], ["Csus2: C D G", () => chord(ext(60, "sus2"), 1.6)], ["Cadd9: C E G D", () => chord(ext(48, "add9"), 1.6)]], "Sus replaces the 3rd. Add keeps it."),
+  S.quiz("Csus4 has…", ["C F G", "C E G", "C D G"], 0, "Yes. The 4th replaces the 3rd."),
+  S.build({ title: "Build it", line: "From the lit root, within two octaves.", labels: "all", rounds: 6, make: () => { const t = rnd(Object.keys(EXT)); const r = 48 + Math.floor(Math.random() * 3);
+    return { prompt: `${nm(r)}${t}`, lit: [r], notes: ext(r, t), show: ext(r, t) }; } }),
+  S.summary("9.1", "You can build extended chords", ["9, 11, 13: 3rds past the octave", "sus swaps the 3rd", "add keeps it"], "9.2"),
+];
+
+NEWL["9.2"] = [
+  S.intro(9, "Jazz voicings", "How pianists really play chords."),
+  S.info("Shell voicings", "Root, 3rd and 7th. Drop the 5th.", { keys: true, labels: true, hints: [50, 53, 60], play: () => chord([50, 53, 60], 1.6) }),
+  S.info("Rootless voicings", "Let the bass play the root. You play 3, 5, 7, 9.", { keys: true, labels: true, hints: IIVI[0], play: () => { chord(IIVI[0], 1.6); playNote(38, 1.6); } }),
+  S.listen("ii – V – I", "Tap both.", [["Shells", () => playProg([[50, 53, 60], [43, 53, 59], [48, 52, 59]], 900, 0.85)], ["Rootless", () => IIVI.forEach((c, i) => after(i * 900, () => { chord(c, 0.85); playNote([38, 43, 36][i], 0.85); }))]], "Only one or two notes move each time."),
+  S.build({ title: "ii – V – I in C", line: "Dm9, G13, Cmaj9. Lit keys first time.", labels: true, rounds: 3, make: r => ({ prompt: ["Dm9", "G13", "Cmaj9"][r], notes: IIVI[r], lit: IIVI[r] }) }),
+  S.build({ kicker: "Practice", title: "ii – V – I in F", line: "Same shapes, moved up.", labels: true, rounds: 3, make: r => { const c = tr(IIVI[r], 5); return { prompt: ["Gm9", "C13", "Fmaj9"][r], notes: c, show: c }; } }),
+  S.build({ kicker: "Practice", title: "ii – V – I in B♭", line: "And again.", labels: "all", rounds: 3, make: r => { const c = tr(IIVI[r], 10); return { prompt: ["Cm9", "F13", "B♭maj9"][r], notes: c, show: c }; } }),
+  S.summary("9.2", "You can voice like a pianist", ["Shells: 1, 3, 7", "Rootless: 3, 5, 7, 9", "Move as little as possible"], "9.3"),
+];
+
+NEWL["9.3"] = [
+  S.intro(9, "Modes", "Seven scales from one set of keys."),
+  S.info("White keys, new home", "C to C is Ionian. D to D is Dorian. G to G is Mixolydian.", { keys: true, labels: true, hints: scaleNotes(50, MODES.Dorian) }),
+  S.listen("Hear the colours", "All start on C, over a low drone. Tap each.", ["Dorian", "Phrygian", "Lydian", "Mixolydian", "Aeolian"].map(m => [m, () => withDrone(60, MODES[m])]), "Dorian cool, Phrygian dark, Lydian bright, Mixolydian bluesy."),
+  S.ear({ title: "Which mode?", labels: ["Dorian", "Lydian", "Mixolydian"], rounds: () => shuffle([0, 1, 2, 0, 1, 2]).map(a => ({ play: () => withDrone(60, MODES[["Dorian", "Lydian", "Mixolydian"][a]]), answer: a })),
+    refs: [["dorian", () => withDrone(60, MODES.Dorian)], ["lydian", () => withDrone(60, MODES.Lydian)], ["mixolydian", () => withDrone(60, MODES.Mixolydian)]] }),
+  S.jam({ title: "Jam in D Dorian", line: "White keys over a D minor groove.", chords: [[50, 53, 57, 60], [50, 53, 57, 60], [55, 59, 62, 65], [50, 53, 57, 60]], names: ["Dm7", "Dm7", "G7", "Dm7"], scale: scaleNotes(62, MODES.Dorian), bpm: 96, need: 24 }),
+  S.summary("9.3", "You know the modes", ["Same keys, different home", "Each mode has a colour", "Dorian is great for jamming"], "9.4"),
+];
+
+NEWL["9.4"] = [
+  S.intro(9, "Chromatic harmony", "Chords from outside the key."),
+  S.info("Secondary dominant", "V of V: D major leading to G, in C major.", { play: () => playProg([[48, 52, 55], [50, 54, 57], [43, 47, 50], [48, 52, 55]], 900, 0.85) }),
+  S.info("Borrowed chord", "Take iv from minor: F minor inside C major.", { play: () => playProg([[48, 52, 55], [53, 56, 60], [48, 52, 55]], 1000, 0.95) }),
+  S.listen("Hear the difference", "Tap each.", [["Plain: C F G C", () => playProg([[48, 52, 55], [53, 57, 60], [43, 47, 50], [48, 52, 55]])], ["Secondary: C D G C", () => playProg([[48, 52, 55], [50, 54, 57], [43, 47, 50], [48, 52, 55]])], ["Borrowed: C Fm G C", () => playProg([[48, 52, 55], [53, 56, 60], [43, 47, 50], [48, 52, 55]])]], "One outside note changes the mood."),
+  S.info("Modulation", "Change key through a shared chord. Am is in both C and G.", { play: () => playProg([[48, 52, 55], [45, 48, 52], [50, 54, 57], [43, 47, 50]], 900, 0.85) }),
+  S.quiz("In C major, V of V is…", ["D major", "G major", "A minor"], 0, "Yes. V of G is D."),
+  S.build({ title: "Play it", line: "C, A7, Dm, G7, C. Any order of keys.", labels: "all", rounds: 5, make: r => { const c = [[48, 52, 55], [45, 49, 52, 55], [50, 53, 57], [43, 47, 50, 53], [48, 52, 55]][r]; return { prompt: ["C", "A7", "Dm", "G7", "C"][r], notes: c, pc: true, show: c }; } }),
+  S.summary("9.4", "You can go outside the key", ["Secondary dominants lead somewhere", "Borrowed chords add colour", "Pivot chords change key"], "9.5"),
+];
+
+const TWB = [[60, 60, 67, 67], [69, 69, 67]];
+NEWL["9.5"] = [
+  S.intro(9, "Reharmonization", "New chords, same melody."),
+  S.info("Tritone substitution", "Swap G7 for D♭7. They share B and F.", { keys: true, labels: "all", hints: [53, 59], play: () => playProg([[50, 53, 57, 60], [49, 53, 56, 59], [48, 52, 55, 59]], 1000, 0.95) }),
+  S.listen("Same tune, two harmonies", "Tap both.", [["Plain", () => { chord([48, 52, 55], 1.6); playSeq(melody(TWB[0], 0.45), 110); after(1700, () => { chord([53, 57, 60], 1.6); playSeq(melody(TWB[1], 0.45), 110); }); }],
+    ["Reharmonized", () => { chord([48, 52, 55, 59], 1.6); playSeq(melody(TWB[0], 0.45), 110); after(1700, () => { chord([50, 53, 57, 60], 0.8); after(800, () => chord([49, 53, 56, 59], 0.8)); playSeq(melody(TWB[1], 0.45), 110); }); }]], "Richer, same melody."),
+  S.quiz("Tritone sub for G7?", ["D♭7", "D7", "C7"], 0, "Yes. Six half steps away."),
+  S.build({ title: "ii – ♭II7 – I", line: "Dm7, D♭7, Cmaj7.", labels: "all", rounds: 3, make: r => { const c = [[50, 53, 57, 60], [49, 53, 56, 59], [48, 52, 55, 59]][r]; return { prompt: ["Dm7", "D♭7", "Cmaj7"][r], notes: c, show: c }; } }),
+  S.ear({ title: "Plain or reharmonized?", labels: ["Plain", "Reharmonized"], rounds: () => shuffle([0, 1, 0, 1]).map(a => ({ play: () => playProg(a ? [[50, 53, 57, 60], [49, 53, 56, 59], [48, 52, 55, 59]] : [[50, 53, 57], [43, 47, 50], [48, 52, 55]], 900, 0.85), answer: a })) }),
+  S.summary("9.5", "You can reharmonize", ["Keep the melody, change the chords", "Tritone sub: ♭II7 for V7", "Richer chords, same tune"], "9.6"),
+];
+
+const SW = [2 / 3, 1 / 3];
+NEWL["9.6"] = [
+  S.intro(9, "Advanced rhythm", "Swing, syncopation, polyrhythms."),
+  S.listen("Straight and swing", "Tap both.", [["Straight", () => demoPat([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], 100)], ["Swing", () => demoPat([...SW, ...SW, ...SW, ...SW], 100)]], "Swing is long-short: doo-ba doo-ba."),
+  S.rhythm({ title: "Swing it", line: "Long-short pairs.", pattern: [...SW, ...SW, 1, ...SW, 1], bpm: 90 }),
+  S.info("3 against 2", "One part plays 3 evenly while the other plays 2.", { play: () => { metro(60, { beats: 2, total: 6 }); demoPat([2 / 3, 2 / 3, 2 / 3, 2 / 3, 2 / 3, 2 / 3], 60, 2); } }),
+  S.rhythm({ title: "Play 3 over the click's 2", line: "Three even notes for every two clicks.", pattern: [2 / 3, 2 / 3, 2 / 3, 2 / 3, 2 / 3, 2 / 3], beats: 2, bpm: 60 }),
+  S.rhythm({ kicker: "Practice", title: "4 against 3", line: "Four even notes for every three clicks.", pattern: Array(8).fill(3 / 4), beats: 3, bpm: 60 }),
+  S.rhythm({ kicker: "Practice", title: "Syncopation", line: "Push the notes between clicks.", pattern: [0.5, 1, 0.5, 0.5, 1, 0.5], bpm: 90 }),
+  S.summary("9.6", "You've got advanced rhythm", ["Swing: long-short", "3 against 2, 4 against 3", "Syncopation pushes the beat"], "9.7"),
+];
+
+const fastRead = (lvl, bpm, title, kickr) => ({ keys: true, render(){ const ph = genPhrase(lvl);
+  S.follow(title, `Keep going at ${bpm} BPM. Don't stop for mistakes.`, { kicker: kickr, seq: ph, staff: { time: "4/4", notes: ph.map(n => ({ n, d: "q" })), bars: [4] }, lights: false, beat: bpm, fitExtra: [55, 72], done: "Kept going. That's the skill." }).render.call(this); } });
+NEWL["9.7"] = [
+  S.intro(9, "Sight-reading at speed", "Read ahead, keep going."),
+  S.info("Eyes ahead", "Look at the next note before you play this one."),
+  S.info("Keep the beat", "A wrong note is fine. Stopping is not."),
+  fastRead(2, 70, "70 BPM", "Practice"),
+  fastRead(3, 90, "90 BPM", "Practice"),
+  fastRead(3, 110, "110 BPM", "Final check"),
+  S.summary("9.7", "Course complete!", ["You can read and play at speed", "You know jazz harmony and modes", "You've finished all nine stages"], null),
+];
+
+Object.keys(NEWL).forEach(k => { LESSONS[k] = NEWL[k]; READY.add(k); });
 function view(v){ current?.cleanup?.(); if(current){ current.cleanup = null; current.onNote = null; } current = null; setHints([]); document.body.className = "v-" + v; window.scrollTo(0, 0); }
 function showWelcome(){
   view("welcome");
