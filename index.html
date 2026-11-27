@@ -516,6 +516,7 @@ function nudgeTarget(){
   if(rng) return [rng.closest(".bars") || rng, rng.classList.contains("vbar") ? "Drag a few bars up." : "Drag the slider."];
   const q = S.querySelector("[data-q]:not(.right):not(.wrong)"); if(q && !S.querySelector(".choice.right")) return [q.parentElement, "Pick an answer."];
   const btn = [...S.querySelectorAll("#go, #ls, #tap, #str")].find(b => !b.disabled);
+  if(keys && S.querySelector("#stf") && !hints.size && !S.querySelector(".prompt")) return [S.querySelector("#stf"), "Play the orange note in the music."];
   if(keys && S.querySelector(".prompt")) return [kbEl, "Play the key the card asks for."];
   if(keys && S.querySelector(".tok.cur") && !hints.size) return [S.querySelector(".tok.cur"), "Play this note on the keyboard."];
   if(btn) return [btn, btn.id === "str" ? "Tap the string." : (btn.id === "tap" ? "Tap the button 4 times." : `Tap ${btn.textContent.trim()}.`)];
