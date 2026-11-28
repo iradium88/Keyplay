@@ -2575,7 +2575,7 @@ const demoPat = (pat, bpm = 80, beats = 4) => { const m = metro(bpm, { beats, to
 
 NEWL["3.1"] = [
   S.intro(3, "Bars and time signatures", "Beats come in groups."),
-  S.info("Bars", "Bar lines split the beats into groups.", { staff: { time: "4/4", notes: q4(8), bars: [4] } }),
+  S.info("Bars", "Music is written on five lines, the staff. Bar lines split the beats into groups.", { staff: { time: "4/4", notes: q4(8), bars: [4] } }),
   S.info("4/4", "Top: 4 beats in each bar. Bottom 4: each beat is a quarter note.", { staff: { time: "4/4", notes: q4(4) }, play: () => metro(90, { beats: 4, total: 8 }) }),
   S.info("3/4", "3 beats in each bar. Like a waltz.", { staff: { time: "3/4", notes: q4(6), bars: [3] }, play: () => metro(110, { beats: 3, total: 9 }) }),
   S.info("2/4", "2 beats in each bar. Like a march.", { staff: { time: "2/4", notes: q4(4), bars: [2] }, play: () => metro(100, { beats: 2, total: 8 }) }),
