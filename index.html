@@ -271,6 +271,13 @@ body.v-lesson :is(#pb,#dl):disabled::before{background:#A9A9B8}
 .axis .lab{position:absolute;left:-44px;bottom:2px;font-size:13px;font-weight:700;color:var(--ink2)}
 .axis i{position:absolute;bottom:-8px;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:var(--coral)}
 .axis i b{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);font-size:12px;font-style:normal;color:var(--ink)}
+.axcap{font-size:13px;font-weight:600;color:var(--ink2);text-align:left;margin:4px 0 0}
+.axis2{position:relative;height:46px;margin:0 6px 30px;border-bottom:3px solid var(--line)}
+.axis2 i{position:absolute;bottom:-9px;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--line);transition:all .2s}
+.axis2 i b{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);font-size:12px;font-style:normal;color:var(--ink2)}
+.axis2 i.on{background:var(--coral);transform:scale(1.3)}.axis2 i.on b{color:var(--ink)}
+.axis2 em{position:absolute;bottom:-28px;transform:translateX(-50%);font-size:11px;font-style:normal;color:#A9A9B8;white-space:nowrap}
+.axis2 em.on{color:var(--coral);font-weight:700}
 </style>
 </head>
 <body>
@@ -1829,15 +1836,16 @@ const L19 = [
         () => { $("#fb").className = "feedback good"; $("#fb").textContent = "They feel the same size, though one adds 110 Hz and the other 440. Both are ×2."; enableNext(); });
   }},
   { render(){
-      const tw = [110, 220, 440, 880];
-      h(`<h1>Your ear hears ×</h1><p>In Hz the octaves spread apart. To your ear they're evenly spaced.</p>
-      <div class="card"><div class="axis"><span class="lab">Hz</span>${tw.map(f => `<i style="left:${(f / 900 * 100).toFixed(1)}%"><b>${f}</b></i>`).join("")}</div>
-        <div class="axis"><span class="lab">Ear</span>${tw.map((f, i) => `<i style="left:${(4 + i * 30.6).toFixed(1)}%"><b>${f}</b></i>`).join("")}</div></div>
-      <div class="row" style="justify-content:center;margin-top:12px"><button class="btn ghost" id="hear">Hear the octaves</button></div>
+      const tw = [110, 220, 440, 880], hzX = tw.map(f => 4 + (f - 110) / 770 * 92), earX = tw.map((_, i) => 4 + i * 92 / 3);
+      const row = (cap, xs, gaps) => `<div class="axcap">${cap}</div><div class="axis2">${xs.map((x, i) => `<i data-d="${i}" style="left:${x.toFixed(1)}%"><b>${tw[i]}</b></i>`).join("")}${gaps.map((g, i) => `<em data-g="${i}" style="left:${((xs[i] + xs[i + 1]) / 2).toFixed(1)}%">${g}</em>`).join("")}</div>`;
+      h(`<h1>Bigger in Hz, same to your ear</h1><p>Tap Play: four notes, each an octave higher. Watch both rows.</p>
+      <div class="card">${row("Measured in Hz, the jumps grow", hzX, ["+110", "+220", "+440"])}${row("What you hear, and the piano: equal jumps", earX, ["octave", "octave", "octave"])}</div>
+      <div class="row" style="justify-content:center;margin-top:12px"><button class="btn ghost" id="hear">Play</button></div>
       <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
       const tms = [];
-      $("#hear").onclick = () => { tms.forEach(clearTimeout); [45, 57, 69, 81].forEach((n, i) => tms.push(setTimeout(() => playNote(n, 0.6), i * 600)));
-        tms.push(setTimeout(() => { $("#fb").className = "feedback good"; $("#fb").textContent = "Equal steps to your ear. That's why the keys are evenly spaced too."; enableNext(); }, 2400)); };
+      $("#hear").onclick = () => { tms.forEach(clearTimeout); screenEl.querySelectorAll(".axis2 .on").forEach(x => x.classList.remove("on"));
+        [45, 57, 69, 81].forEach((n, i) => tms.push(setTimeout(() => { playNote(n, 0.8); screenEl.querySelectorAll(`[data-d="${i}"]${i ? `,[data-g="${i - 1}"]` : ""}`).forEach(x => x.classList.add("on")); }, i * 1000)));
+        tms.push(setTimeout(() => { $("#fb").className = "feedback good"; $("#fb").textContent = "Each jump doubles the Hz, so the Hz gaps grow. Your ear hears every doubling as the same step. That's why every octave on the piano is the same 12 keys."; enableNext(); }, 3600)); };
       this.cleanup = () => tms.forEach(clearTimeout);
   }},
   { render(){
