@@ -278,6 +278,9 @@ body.v-lesson :is(#pb,#dl):disabled::before{background:#A9A9B8}
 .axis2 i.on{background:var(--coral);transform:scale(1.3)}.axis2 i.on b{color:var(--ink)}
 .axis2 em{position:absolute;bottom:-28px;transform:translateX(-50%);font-size:11px;font-style:normal;color:#A9A9B8;white-space:nowrap}
 .axis2 em.on{color:var(--coral);font-weight:700}
+/* the heard ✓ must not change the button's size */
+button[data-li]{position:relative;padding-right:34px;padding-left:34px}
+.choice.heard:after{position:absolute;right:14px;top:50%;transform:translateY(-50%)}
 </style>
 </head>
 <body>
