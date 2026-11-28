@@ -280,6 +280,10 @@ button[data-li]{position:relative;padding-right:34px;padding-left:34px}
 .card #rd.muted::before{content:"Round "}
 figure.hand{margin:0;display:flex;flex-direction:column;align-items:center}
 figure.hand figcaption{font-size:13px;font-weight:600;color:var(--ink2);margin-top:2px}
+.connect{display:flex;align-items:center;gap:14px;text-align:left}
+.cdot{width:16px;height:16px;border-radius:50%;background:var(--bad);flex:none}.cdot.on{background:var(--good)}
+.connect{display:flex;align-items:center;gap:14px;text-align:left}
+.cdot{width:16px;height:16px;border-radius:50%;background:var(--bad);flex:none}.cdot.on{background:var(--good)}
 </style>
 </head>
 <body>
@@ -536,7 +540,7 @@ document.addEventListener("keyup", e => {
 function onMidi(msg){
   if((msg.data[0] & 0xf0) === 0x90 && msg.data[2] > 0) askUnlock();
   const [st, d1, d2] = msg.data; const cmd = st & 0xf0;
-  if(cmd === 0x90 && d2 > 0){ audio(); if(d1 < base || d1 > base + 24){ base = Math.max(24, Math.min(84, d1 - (d1 % 12) - 12)); buildKeyboard(); } press(d1, d2 / 127); }
+  if(cmd === 0x90 && d2 > 0){ audio(); window.lastMidiAt = performance.now(); if(d1 < base || d1 > base + 24){ base = Math.max(24, Math.min(84, d1 - (d1 % 12) - 12)); buildKeyboard(); } press(d1, d2 / 127); }
   else if(cmd === 0x80 || (cmd === 0x90 && d2 === 0)) release(d1);
 }
 const soundOn = () => ctx && ctx.state === "running";
@@ -545,7 +549,7 @@ const SHOW_MIDI_UI = false; // keyboard connection UI comes in a later stage
 function askUnlock(){ if(SHOW_MIDI_UI && midiOn && document.body.classList.contains("keys") && !soundOn()) document.getElementById("unlock").classList.remove("hidden"); }
 document.getElementById("unlock").onclick = () => { audio(); document.getElementById("unlock").classList.add("hidden"); };
 function setMidiStatus(names){
-  midiOn = names.length > 0; askUnlock();
+  window.midiNames = names; midiOn = names.length > 0; askUnlock();
   document.getElementById("midiDot").classList.toggle("on", names.length > 0);
   document.getElementById("midiText").textContent = names.length ? "Connected: " + names.join(", ") : (window.top !== window.self ? "Keyboard blocked in this preview. Open the file in Chrome to use it." : "No MIDI keyboard. Use the keys below.");
 }
@@ -2357,7 +2361,7 @@ S.summary = (id, title, bullets, nextId) => ({ render(){ const r = RES[id]; less
 // ===================== course map (all stages) =====================
 const COURSE = [
   { title: "Sound", lessons: STAGE1 },
-  { title: "Foundations", lessons: [["2.1","The keyboard map"],["2.2","Hands and fingers"],["2.3","Pulse and tempo"],["2.4","Note lengths"],["2.5","Five-finger position"],["2.6","First tunes"],["2.7","Sharps and flats"],["2.8","First hands together"]] },
+  { title: "Foundations", lessons: [["2.1","The keyboard map"],["2.2","Connect your keyboard"],["2.3","Hands and fingers"],["2.4","Pulse and tempo"],["2.5","Note lengths"],["2.6","Five-finger position"],["2.7","First tunes"],["2.8","Sharps and flats"],["2.9","First hands together"]] },
   { title: "Rhythm and reading", lessons: [["3.1","Bars and time signatures"],["3.2","Rests"],["3.3","Eighth notes"],["3.4","Dots and ties"],["3.5","Treble clef"],["3.6","Bass clef"],["3.7","Grand staff"],["3.8","Sight-reading"],["3.9","Dynamics"],["3.10","More rhythm"]] },
   { title: "Scales and keys", lessons: [["4.1","The major scale formula"],["4.2","First scales"],["4.3","Scale degrees"],["4.4","Sharp keys"],["4.5","Flat keys"],["4.6","Circle of fifths"],["4.7","All 12 major scales"],["4.8","Minor keys"],["4.9","Pentatonic and blues"]] },
   { title: "Intervals and ear", lessons: [["5.1","Interval sizes"],["5.2","Interval qualities"],["5.3","Intervals by ear"],["5.4","Scale degrees by ear"],["5.5","Melodic dictation"],["5.6","Rhythm dictation"]] },
@@ -2409,6 +2413,8 @@ showPath = function(stage){
 const nextLessonId = id => { const all = COURSE.flatMap(c => c.lessons.map(l => l[0])); const i = all.indexOf(id); return all[i + 1] && READY.has(all[i + 1]) ? all[i + 1] : null; };
 const _startLesson = startLesson;
 startLesson = function(id = "1.1"){ mapStage = parseInt(id); RES[id] = null; _startLesson(id); };
+// one-time move of saved progress: new 2.2 "Connect your keyboard" (2026-11-28)
+{ const p0 = load(); if(!p0.mig22){ const old = { ...p0 }; for(let k = 2; k <= 8; k++) delete p0["2." + k]; for(let k = 2; k <= 8; k++) if(old["2." + k]) p0["2." + (k + 1)] = old["2." + k]; p0.mig22 = true; save(p0); } }
 // one-time move of saved progress: 5.6 became 6.2 (2026-11-28)
 { const p0 = load(); if(!p0.mig562){ const old = { ...p0 }; ["5.6", "5.7", "6.2", "6.3", "6.4", "6.5", "6.6", "6.7", "6.8", "6.9"].forEach(k => delete p0[k]);
     const map = { "5.6": "6.2", "5.7": "5.6", "6.2": "6.3", "6.3": "6.4", "6.4": "6.5", "6.5": "6.6", "6.6": "6.7", "6.7": "6.8", "6.8": "6.9", "6.9": "6.10" };
@@ -2465,7 +2471,60 @@ NEWL["2.1"] = [
   S.summary("2.1", "You can name the keys", ["Black keys: groups of 2 and 3", "C is left of the two black keys", "Seven names: C D E F G A B"], "2.2"),
 ];
 
+// ---- 2.2 Connect your keyboard: plug in, test, get familiar ----
+const fromMidi = () => performance.now() - (window.lastMidiAt || -1e9) < 80;
+const kbName = () => (window.midiNames || []).join(", ");
 NEWL["2.2"] = [
+  S.intro(2, "Connect your keyboard", "Plug in, test it, get to know it. No keyboard? The screen keys work too."),
+  { render(){
+      h(`<h1>Plug it in</h1><p>Connect your keyboard with a USB cable. Use Chrome or Edge.</p>
+      <div class="card connect"><div class="cdot" id="cd"></div><div><b id="cs">Looking for a keyboard…</b><br><span class="muted" id="cn"></span></div></div>
+      <div class="row" style="justify-content:center;margin-top:12px"><button class="btn ghost" id="go">Check again</button></div>
+      <div class="feedback" id="fb"></div>${footer("Continue")}`); wireFooter();
+      const upd = () => { const on = (window.midiNames || []).length > 0; $("#cd").classList.toggle("on", on);
+        $("#cs").textContent = on ? "Keyboard connected" : navigator.requestMIDIAccess ? "No keyboard found" : "This browser can't see keyboards";
+        $("#cn").textContent = on ? kbName() : navigator.requestMIDIAccess ? "Plug it in, then tap Check again. You can also continue with the screen keys." : "Open this page in Chrome or Edge. You can still use the screen keys.";
+        if(on){ fb("good", "Found it. Let's test it."); } };
+      $("#go").onclick = () => { navigator.requestMIDIAccess?.().then(acc => { acc.inputs.forEach(i => i.onmidimessage = onMidi); window.midiNames = [...acc.inputs.values()].map(i => i.name); setMidiStatus(window.midiNames); upd(); }).catch(upd); };
+      upd(); const t = setInterval(upd, 800); this.cleanup = () => clearInterval(t);
+  }},
+  { keys: true, render(){
+      const seen = new Set(); let midi = 0;
+      h(`<h1>Test it</h1><p>Play any 5 different keys. Each one lights up below.</p>
+      <div class="card" style="text-align:center"><span class="big" id="ct">0 / 5</span><p class="muted" id="src" style="margin:4px 0 0">Waiting for a key…</p></div>
+      <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      fitKeys(48, 72);
+      this.onNote = n => { seen.add(n); if(fromMidi()) midi++; flash(n, "ok");
+        $("#ct").textContent = `${Math.min(seen.size, 5)} / 5`; $("#src").textContent = fromMidi() ? "From your keyboard ✓" : "From the screen";
+        if(seen.size >= 5){ fb("good", midi ? "Your keyboard works. Sound comes from this page." : "Screen keys work. A real keyboard will feel better later."); enableNext(); } };
+      this.auto = () => [60, 62, 64, 65, 67].forEach((n, i) => after(i * 120, () => { press(n, 0.7); after(60, () => release(n)); }));
+  }},
+  { keys: true, render(){
+      let soft = false, loud = false;
+      h(`<h1>Soft and loud</h1><p>Press a key gently, then press one hard. On screen: tap high on a key for soft, low for loud.</p>
+      <div class="card"><div class="meter"><div id="mv"></div></div><div class="row" style="justify-content:space-between;margin-top:6px"><span class="muted" id="ms">soft ○</span><span class="muted" id="ml">loud ○</span></div></div>
+      <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      fitKeys(48, 72);
+      this.onNote = (n, v) => { $("#mv").style.width = Math.round(v * 100) + "%";
+        if(v < 0.45 && !soft){ soft = true; $("#ms").textContent = "soft ✓"; } if(v > 0.7 && !loud){ loud = true; $("#ml").textContent = "loud ✓"; }
+        if(soft && loud){ fb("good", "The harder you press, the louder it plays."); enableNext(); } };
+      this.auto = () => [0.2, 0.95].forEach((v, i) => after(i * 150, () => { press(60, v); after(60, () => release(60)); }));
+  }},
+  { keys: true, render(){
+      let lo = 999, hi = -1;
+      h(`<h1>How many keys do you have?</h1><p>Play your lowest key, then your highest.</p>
+      <div class="card" style="text-align:center"><span class="big" id="rg">–</span><p class="muted" style="margin:4px 0 0">keys, lowest to highest</p></div>
+      <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      this.onNote = n => { lo = Math.min(lo, n); hi = Math.max(hi, n); const k = hi - lo + 1; $("#rg").textContent = k;
+        if(k >= 13){ fb("good", k < 49 ? "A small keyboard is fine. Lessons fit in two octaves. Lower and Higher move the screen keys." : "Plenty of keys for every lesson."); enableNext(); } };
+      this.auto = () => [48, 72].forEach((n, i) => after(i * 150, () => { press(n, 0.7); after(60, () => release(n)); }));
+  }},
+  S.info("Sit and hold", "Sit centred at the middle of the keyboard, forearms level with the keys. Fingers curved, wrists loose."),
+  S.info("No keyboard nearby?", "On a computer, the keys A W S E D F T G Y H U J K play notes too.", { keys: true, labels: true }),
+  S.summary("2.2", "Your keyboard is ready", ["Connected and tested", "Soft and loud by how hard you press", "Screen keys work as a backup"], "2.3"),
+];
+
+NEWL["2.3"] = [
   S.intro(2, "Hands and fingers", "Your fingers have numbers."),
   S.info("Thumbs are 1", "Then 2, 3, 4, up to 5 on the little finger.", { html: `<div class="cols">${handSvg("L")}${handSvg("R")}</div>` }),
   S.info("Curve your fingers", "Like holding a ball. Play with the fingertips.", { html: `<div class="cols">${handSvg("R", [2, 3, 4])}</div>` }),
@@ -2477,10 +2536,10 @@ NEWL["2.2"] = [
   S.info("Left hand on C", "Little finger on the C below. Thumb on G.", { keys: true, labels: true, hints: LPOS, html: `<div class="cols">${handSvg("L", [5])}</div>` }),
   S.find({ title: "Left hand: play the finger", line: "The thumb is on the right now.", rounds: 8, make: () => { const f = 1 + Math.floor(Math.random() * 5); const t = LPOS[5 - f];
     return { prompt: `<div class="cols">${handSvg("L", [f], 100)}</div>Finger ${f}`, lit: LPOS, ok: n => n === t, show: [t], bad: () => `Finger ${f}: count from the thumb.` }; } }),
-  S.summary("2.2", "You know your fingers", ["Thumb is 1, little finger is 5", "Curved fingers, play on the tips", "Right thumb on middle C"], "2.3"),
+  S.summary("2.3", "You know your fingers", ["Thumb is 1, little finger is 5", "Curved fingers, play on the tips", "Right thumb on middle C"], "2.4"),
 ];
 
-NEWL["2.3"] = [
+NEWL["2.4"] = [
   S.intro(2, "Pulse and tempo", "Music has a heartbeat."),
   S.info("The beat", "A steady click, like footsteps.", { play: () => ticks(80, 8) }),
   S.listen("Tempo", "How fast the beat goes, in beats per minute (BPM). Tap each one.", [["Slow: 60 BPM", () => ticks(60, 6)], ["Medium: 90 BPM", () => ticks(90, 8)], ["Fast: 140 BPM", () => ticks(140, 10)]], "BPM means beats per minute."),
@@ -2488,10 +2547,10 @@ NEWL["2.3"] = [
   S.rhythm({ title: "Play with the click", line: "Tap Start. After 4 clicks, play the lit key on every click.", pattern: [1, 1, 1, 1, 1, 1, 1, 1], bpm: 70 }),
   S.rhythm({ kicker: "Practice", title: "A bit faster", line: "Same again at 100 BPM.", pattern: [1, 1, 1, 1, 1, 1, 1, 1], bpm: 100 }),
   S.rhythm({ kicker: "Practice", title: "Every other click", line: "Play on clicks 1 and 3.", pattern: [2, 2, 2, 2], bpm: 90 }),
-  S.summary("2.3", "You can keep the beat", ["The beat is a steady pulse", "Tempo is its speed, in BPM", "Play right on the click"], "2.4"),
+  S.summary("2.4", "You can keep the beat", ["The beat is a steady pulse", "Tempo is its speed, in BPM", "Play right on the click"], "2.5"),
 ];
 
-NEWL["2.4"] = [
+NEWL["2.5"] = [
   S.intro(2, "Note lengths", "Some notes last longer than others."),
   S.info("Quarter note", "Lasts one beat.", { keys: true, html: rhyHtml([1, 1, 1, 1]), play: () => { const m = metro(80, { total: 4 }); range(0, 3).forEach(i => after((m.t0 - ctx.currentTime + i * 0.75) * 1000, () => playNote(60, 0.6))); }, hints: [60] }),
   S.info("Half note", "Lasts two beats. Count 1-2.", { keys: true, html: rhyHtml([2, 2]), play: () => holdDemo(2), hints: [60] }),
@@ -2500,13 +2559,13 @@ NEWL["2.4"] = [
   S.quiz("Which fills exactly 4 beats?", ["Two half notes", "Three quarter notes", "Two whole notes"], 0, "Yes. 2 + 2 = 4."),
   S.rhythm({ title: "Hold for the length", line: "Hold each note until its box ends.", pattern: [2, 2, 1, 1, 2], bpm: 70, holds: true }),
   S.rhythm({ kicker: "Practice", title: "Long and short", line: "Whole, quarters, half.", pattern: [4, 1, 1, 2], bpm: 75, holds: true }),
-  S.summary("2.4", "You can hold notes", ["Quarter = 1 beat", "Half = 2 beats", "Whole = 4 beats"], "2.5"),
+  S.summary("2.5", "You can hold notes", ["Quarter = 1 beat", "Half = 2 beats", "Whole = 4 beats"], "2.6"),
 ];
 
 const fingersOf = (seq, pos, left) => seq.map(n => left ? 5 - pos.indexOf(n) : pos.indexOf(n) + 1);
 const UPDN = [0, 1, 2, 3, 4, 3, 2, 1, 0];
 const GPOS = [55, 57, 59, 60, 62], FPOS = [53, 55, 57, 58, 60];
-NEWL["2.5"] = [
+NEWL["2.6"] = [
   S.intro(2, "Five-finger position", "One finger on each of five keys."),
   S.info("C position", "Right thumb on C. Fingers on C D E F G.", { keys: true, labels: true, hints: CPOS }),
   S.follow("Up and down", "The numbers are your fingers.", { seq: UPDN.map(i => CPOS[i]), fingers: UPDN.map(i => i + 1), labels: true }),
@@ -2517,13 +2576,13 @@ NEWL["2.5"] = [
   S.follow("F position", "Right hand, up and down.", { seq: UPDN.map(i => FPOS[i]), fingers: UPDN.map(i => i + 1), labels: true }),
   { keys: true, render(){ const pat = [0, 2, 1, 3, 2, 4, 3, 1, 0]; const s = pat.map(i => CPOS[i]);
     S.follow("Read the fingers", "No lights this time.", { kicker: "Practice", seq: s, fingers: pat.map(i => i + 1), lights: false }).render.call(this); } },
-  S.summary("2.5", "You can hold a position", ["Five fingers, five keys", "C, G and F positions", "Same shape, new place"], "2.6"),
+  S.summary("2.6", "You can hold a position", ["Five fingers, five keys", "C, G and F positions", "Same shape, new place"], "2.7"),
 ];
 
 const ODE = [64, 64, 65, 67, 67, 65, 64, 62, 60, 60, 62, 64, 64, 62, 62];
 const MARY = [64, 62, 60, 62, 64, 64, 64, 62, 62, 62, 64, 67, 67];
 const TWINKLE = [60, 60, 67, 67, 69, 69, 67, 65, 65, 64, 64, 62, 62, 60];
-NEWL["2.6"] = [
+NEWL["2.7"] = [
   S.intro(2, "First tunes", "Real songs with five fingers."),
   S.follow("Ode to Joy", "Follow the lit keys.", { seq: ODE, names: true, labels: true, demo: true, bpm: 100, done: "That's Beethoven!" }),
   S.follow("Ode to Joy, with the beat", "Play one note on each click.", { seq: ODE, names: true, beat: 72, done: "In time, too." }),
@@ -2531,10 +2590,10 @@ NEWL["2.6"] = [
   S.follow("Mary Had a Little Lamb", "Follow the lit keys.", { seq: MARY, names: true, labels: true, demo: true, bpm: 100 }),
   S.follow("Twinkle Twinkle", "One stretch: finger 5 reaches to A.", { seq: TWINKLE, names: true, labels: true, demo: true, bpm: 100 }),
   S.follow("Twinkle, no lights", "Read the names.", { kicker: "Practice", seq: TWINKLE, names: true, lights: false }),
-  S.summary("2.6", "You played three tunes", ["Ode to Joy", "Mary Had a Little Lamb", "Twinkle Twinkle"], "2.7"),
+  S.summary("2.7", "You played three tunes", ["Ode to Joy", "Mary Had a Little Lamb", "Twinkle Twinkle"], "2.8"),
 ];
 
-NEWL["2.7"] = [
+NEWL["2.8"] = [
   S.intro(2, "Sharps and flats", "The black keys get names too."),
   S.info("Half step", "The very next key, black or white.", { keys: true, labels: true, hints: [60, 61] }),
   S.info("Whole step", "Two half steps. Skip one key.", { keys: true, labels: true, hints: [60, 62] }),
@@ -2544,10 +2603,10 @@ NEWL["2.7"] = [
   S.find({ title: "Up a half step", line: "Play the very next key up.", labels: true, rounds: 6, make: () => { const s = 55 + Math.floor(Math.random() * 14); return { prompt: `From ${nm(s)}`, lit: [s], ok: n => n === s + 1, show: [s + 1], bad: () => "The very next key, black or white." }; } }),
   S.find({ title: "Down a whole step", line: "Skip one key, going down.", labels: true, rounds: 6, make: () => { const s = 52 + Math.floor(Math.random() * 18); return { prompt: `From ${nm(s, true)}`, lit: [s], ok: n => n === s - 2, show: [s - 2], bad: () => "Two half steps down." }; } }),
   S.find({ title: "Find the black key", line: "No names on the keys.", rounds: 6, timed: true, make: () => { const p = rnd([1, 3, 6, 8, 10]); const fl = Math.random() < 0.5; return { prompt: `Play ${nm(p, fl)}`, ok: n => pc(n) === p, show: range(48, 72).filter(n => pc(n) === p), bad: n => `That's ${nm(n, fl)}.` }; } }),
-  S.summary("2.7", "You know the black keys", ["Half step: the very next key", "Whole step: two half steps", "♯ is up, ♭ is down"], "2.8"),
+  S.summary("2.8", "You know the black keys", ["Half step: the very next key", "Whole step: two half steps", "♯ is up, ♭ is down"], "2.9"),
 ];
 
-NEWL["2.8"] = [
+NEWL["2.9"] = [
   S.intro(2, "First hands together", "One hand holds, the other moves."),
   S.follow("You: melody. App: left hand", "Play Ode to Joy. The left hand comes in under you.", { seq: ODE, names: true, labels: true, backing: { 0: [48], 4: [55], 8: [48], 12: [55], 14: [48] }, backDur: 2.2 }),
   S.follow("Now the left hand", "Play the lit low keys. The app plays the tune.", { seq: [48, 55, 48, 55], labels: true, backMel: { 0: ODE.slice(0, 4), 1: ODE.slice(4, 8), 2: ODE.slice(8, 12), 3: ODE.slice(12) }, backBeat: 0.5, bpm: 90, fitExtra: [67] }),
@@ -2555,7 +2614,7 @@ NEWL["2.8"] = [
   S.follow("Hold and move", "Hold the low C. Play the right hand over it.", { seq: [48, 60, 62, 64, 65, 67], labels: true, done: "On a real keyboard you can hold both. Here, one at a time is fine." }),
   { keys: true, render(){ const steps = [0, 1, 2, 1, 0, 2, 3, 4, 3, 2, 1, 0]; const pick = []; let i = 2; for(let k = 0; k < 8; k++){ pick.push(CPOS[i]); i = Math.max(0, Math.min(4, i + rnd([-1, 1, 1, -1, 2, -2]))); } pick.push(60);
     S.follow("A new tune", "Read the names, one note per click.", { kicker: "Stage check", seq: pick, names: true, lights: false, beat: 70, done: "A tune you'd never seen. Stage 2 done!" }).render.call(this); } },
-  S.summary("2.8", "Stage 2 complete!", ["You can find any note", "You can keep a steady beat", "You can play simple tunes in five-finger position"], "3.1"),
+  S.summary("2.9", "Stage 2 complete!", ["You can find any note", "You can keep a steady beat", "You can play simple tunes in five-finger position"], "3.1"),
 ];
 
 // ===================== Stage 3: Rhythm and reading =====================
