@@ -2445,9 +2445,12 @@ NEWL["2.1"] = [
   S.find({ kicker: " ", title: "Find a C, 3 times", line: "Any C. Look for the two black keys.", rounds: 3, make: () => ({ prompt: "Play a C", ok: n => pc(n) === 0, show: [48, 60, 72], bad: () => "C sits just left of the two black keys." }) }),
   S.info("Seven letters", "C D E F G A B, then C again.", { keys: true, labels: true }),
   S.follow("Play C to C", "Say each name as you play.", { seq: whitesIn(60, 72), names: true, labels: true, done: "Eight keys, seven names. Then it starts again." }),
+  S.info("After G comes A", "Music uses only 7 letters, A to G. After G, start again at A.", { keys: true, labels: true, hints: [67, 69], play: () => walk([65, 67, 69, 71], 500), playLabel: "Hear F, G, A, B" }),
+  S.find({ kicker: "Practice", title: "Find the letter", line: "Names are on the keys. Find each one.", labels: true, rounds: 5, make: () => { const p = rnd(WHITE_PC); return { prompt: `Play ${LETTERS[WHITE_PC.indexOf(p)]}`, ok: n => pc(n) === p, show: range(48, 72).filter(n => pc(n) === p), bad: n => `That's ${nm(n)}.` }; } }),
   S.quiz("What comes after G?", ["A", "H", "C"], 0, "Right. After G, the letters start again at A."),
   S.info("Middle C", "The C in the middle of the piano. Our home key.", { keys: true, labels: true, hints: [60] }),
-  S.find({ title: "Find the note", line: "No names on the keys now.", rounds: 8, timed: true, make: () => { const p = rnd(WHITE_PC); return { prompt: `Play ${LETTERS[WHITE_PC.indexOf(p)]}`, ok: n => pc(n) === p, show: range(48, 72).filter(n => pc(n) === p), bad: n => `That's ${nm(n)}.` }; } }),
+  S.find({ title: "Find the note", line: "No names now. Find C, then count up: C D E F G A B. It starts easy.", rounds: 8, make: r => { const pool = r < 3 ? [0, 2, 4] : r < 5 ? [0, 2, 4, 5, 7] : WHITE_PC; const p = rnd(pool); const L = LETTERS[WHITE_PC.indexOf(p)];
+    return { prompt: `Play ${L}`, ok: n => pc(n) === p, show: range(48, 72).filter(n => pc(n) === p), bad: n => `That's ${nm(n)}. From C, count up to ${L}.` }; } }),
   S.summary("2.1", "You can name the keys", ["Black keys: groups of 2 and 3", "C is left of the two black keys", "Seven names: C D E F G A B"], "2.2"),
 ];
 
