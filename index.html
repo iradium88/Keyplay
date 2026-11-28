@@ -2107,23 +2107,25 @@ function score(right, rounds){ const r = RES[lessonId] || (RES[lessonId] = { rig
 const fb = (cls, msg) => { const f = $("#fb"); if(f){ f.className = "feedback " + cls; f.textContent = msg; } };
 
 // ---- hand picture with finger numbers ----
-function handSvg(side = "R", hl = [], size = 150){
-  // flat illustration of a hand seen from above, palm down; right hand has the thumb on the left.
-  // union trick: draw every part with a thick outline, then again without it, so only the outer edge shows.
-  const F = [ { x: 64, y: 168, a: -52, L: 70, w: 32 }, { x: 80, y: 112, a: -7, L: 86, w: 28 }, { x: 107, y: 106, a: 0, L: 96, w: 28 }, { x: 134, y: 110, a: 7, L: 88, w: 27 }, { x: 158, y: 124, a: 17, L: 70, w: 24 } ];
-  const m = side === "R" ? 1 : -1, X = x => side === "R" ? x : 200 - x, rad = d => d * Math.PI / 180;
-  const cap = (f, fill, extra = "") => { const a = f.a * m, bx = X(f.x); return `<g transform="rotate(${a} ${bx} ${f.y})"><rect x="${bx - f.w / 2}" y="${f.y - f.L}" width="${f.w}" height="${f.L + 36}" rx="${f.w / 2}" fill="${fill}" ${extra}/></g>`; };
-  const nail = f => { const a = f.a * m, bx = X(f.x); return `<g transform="rotate(${a} ${bx} ${f.y})"><rect x="${bx - f.w / 2 + 6}" y="${f.y - f.L + 5}" width="${f.w - 12}" height="${f.w * 0.62}" rx="${(f.w - 12) / 2.4}" fill="var(--skin2)"/></g>`; };
-  const crease = f => { const a = f.a * m, bx = X(f.x); return `<g transform="rotate(${a} ${bx} ${f.y})"><path d="M${bx - f.w / 2 + 8},${f.y - f.L * 0.45} q${f.w / 2 - 8},4 ${f.w - 16},0" fill="none" stroke="var(--skinline)" stroke-width="2" stroke-linecap="round"/></g>`; };
-  const palm = `<rect x="${X(side === "R" ? 60 : 170) - (side === "R" ? 0 : 0)}" y="104" width="110" height="112" rx="38" transform="${side === "R" ? "" : "translate(-110,0)"}"/>`;
-  const palmEl = fill => `<rect x="${side === "R" ? 60 : 30}" y="104" width="110" height="114" rx="40" fill="${fill}"/><rect x="${side === "R" ? 76 : 46}" y="190" width="78" height="50" rx="10" fill="${fill}"/>`;
-  const parts = fill => F.map(f => cap(f, fill)).join("") + palmEl(fill);
-  const tips = F.map((f, i) => { const a = rad(f.a * m), bx = X(f.x), d = f.L + 16; return [bx + Math.sin(a) * d, f.y - Math.cos(a) * d]; });
-  const badges = tips.map(([x, y], i) => { const on = hl.includes(i + 1); return `<circle cx="${x}" cy="${y}" r="12" fill="${on ? "var(--coral)" : "var(--ink)"}"/><text x="${x}" y="${y + 5}" text-anchor="middle" font-size="15" font-weight="800" fill="#fff">${i + 1}</text>`; }).join("");
-  const glow = F.map((f, i) => { if(!hl.includes(i + 1)) return ""; const a = f.a * m, bx = X(f.x), h = f.L * (i ? 0.78 : 0.7); return `<g transform="rotate(${a} ${bx} ${f.y})"><rect x="${bx - f.w / 2 + 3}" y="${f.y - f.L + 3}" width="${f.w - 6}" height="${h}" rx="${(f.w - 6) / 2}" fill="var(--coral)"/></g>`; }).join("");
-  return `<figure class="hand"><svg viewBox="-26 -24 252 268" width="${size}" height="${Math.round(size * 1.06)}" aria-label="${side === "R" ? "Right" : "Left"} hand">
-    <g stroke="var(--skinline)" stroke-width="6" stroke-linejoin="round">${parts("var(--skinline)")}</g>${parts("var(--skin)")}
-    ${F.map(nail).join("")}${F.slice(1).map(crease).join("")}${glow}${badges}</svg><figcaption>${side === "R" ? "Right" : "Left"} hand</figcaption></figure>`;
+function handSvg(side = "R", hl = [], size = 160){
+  // right hand seen from above, palm down, thumb on the left. Left hand is the mirror image.
+  // real proportions: fingers ~ 0.9 of palm length, middle longest, little finger shortest and set lower.
+  const F = [ { x: 66, y: 204, a: -46, L: 92, wb: 34, wt: 23 },
+              { x: 79, y: 124, a: -13, L: 86, wb: 25, wt: 21 }, { x: 101, y: 119, a: -3, L: 98, wb: 25, wt: 21 },
+              { x: 122, y: 121, a: 7, L: 91, wb: 24, wt: 20 }, { x: 142, y: 131, a: 18, L: 72, wb: 21, wt: 18 } ];
+  const rad = d => d * Math.PI / 180, mir = side === "L", X = x => mir ? 160 - x : x;
+  const fing = (f, fill, ext = 26) => `<path transform="rotate(${f.a} ${f.x} ${f.y})" fill="${fill}" d="M${f.x - f.wb / 2},${f.y + ext} L${f.x - f.wb / 2},${f.y} L${f.x - f.wt / 2},${f.y - f.L + f.wt / 2} A${f.wt / 2} ${f.wt / 2} 0 0 1 ${f.x + f.wt / 2},${f.y - f.L + f.wt / 2} L${f.x + f.wb / 2},${f.y} L${f.x + f.wb / 2},${f.y + ext} Z"/>`;
+  const palm = fill => `<path fill="${fill}" d="M66,126 Q104,110 154,133 C160,168 157,204 143,228 L141,268 L83,268 L81,230 C66,214 60,186 64,156 Z"/>`;
+  const parts = fill => F.map(f => fing(f, fill)).join("") + palm(fill);
+  const nail = f => `<path transform="rotate(${f.a} ${f.x} ${f.y})" fill="var(--skin2)" d="M${f.x - f.wt / 2 + 4},${f.y - f.L + f.wt * 0.55} q0,${-f.wt * 0.4} ${f.wt / 2 - 4},${-f.wt * 0.4} q${f.wt / 2 - 4},0 ${f.wt / 2 - 4},${f.wt * 0.4} l0,${f.wt * 0.35} q${-(f.wt / 2 - 4)},3 ${-(f.wt - 8)},0 Z"/>`;
+  const knuck = f => [0.33, 0.62].map(t => `<path transform="rotate(${f.a} ${f.x} ${f.y})" d="M${f.x - f.wt / 2 + 5},${f.y - f.L * t} q${f.wt / 2 - 5},2.5 ${f.wt - 10},0" fill="none" stroke="var(--skinline)" stroke-width="1.4" stroke-linecap="round" opacity=".7"/>`).join("");
+  const seg = (f, t) => { const w = f.wb + (f.wt - f.wb) * t, y = f.y - f.L * t; return `<path transform="rotate(${f.a} ${f.x} ${f.y})" fill="var(--coral)" d="M${f.x - w / 2},${y} L${f.x - f.wt / 2},${f.y - f.L + f.wt / 2} A${f.wt / 2} ${f.wt / 2} 0 0 1 ${f.x + f.wt / 2},${f.y - f.L + f.wt / 2} L${f.x + w / 2},${y} Z"/>`; };
+  const glow = F.map((f, i) => hl.includes(i + 1) ? seg(f, i ? 0.08 : 0.42) : "").join("");
+  const shape = `<g stroke="var(--skinline)" stroke-width="3.5" stroke-linejoin="round">${parts("var(--skinline)")}</g>${parts("var(--skin)")}${glow}${F.map(nail).join("")}${F.slice(1).map(knuck).join("")}`;
+  const badges = F.map((f, i) => { const d = f.L + 22, x = X(f.x + Math.sin(rad(f.a)) * d), y = f.y - Math.cos(rad(f.a)) * d, on = hl.includes(i + 1);
+    return `<circle cx="${x}" cy="${y}" r="16" fill="${on ? "var(--coral)" : "var(--ink)"}"/><text x="${x}" y="${y + 7.5}" text-anchor="middle" font-size="22" font-weight="800" fill="#fff">${i + 1}</text>`; }).join("");
+  return `<figure class="hand"><svg viewBox="-40 -30 240 302" width="${size}" height="${Math.round(size * 302 / 240)}" aria-label="${mir ? "Left" : "Right"} hand">
+    <g ${mir ? `transform="translate(160,0) scale(-1,1)"` : ""}>${shape}</g>${badges}</svg><figcaption>${mir ? "Left" : "Right"} hand</figcaption></figure>`;
 }
 
 // ===================== screen factories =====================
@@ -2538,10 +2540,10 @@ NEWL["2.3"] = [
   S.quiz("And 5?", ["Little finger", "Thumb", "Index finger"], 0, "Right. 5 is the little finger."),
   S.info("Right hand on C", "Thumb on middle C. One finger per white key.", { keys: true, labels: true, hints: CPOS, html: `<div class="cols">${handSvg("R", [1])}</div>` }),
   S.find({ title: "Right hand: play the finger", line: "Keep your hand on the five lit keys.", rounds: 8, make: () => { const f = 1 + Math.floor(Math.random() * 5); const t = CPOS[f - 1];
-    return { prompt: `<div class="cols">${handSvg("R", [f], 100)}</div>Finger ${f}`, lit: CPOS, ok: n => n === t, show: [t], bad: () => `Finger ${f}: count from the thumb.` }; } }),
+    return { prompt: `<div class="cols">${handSvg("R", [f], 130)}</div>Finger ${f}`, lit: CPOS, ok: n => n === t, show: [t], bad: () => `Finger ${f}: count from the thumb.` }; } }),
   S.info("Left hand on C", "Little finger on the C below. Thumb on G.", { keys: true, labels: true, hints: LPOS, html: `<div class="cols">${handSvg("L", [5])}</div>` }),
   S.find({ title: "Left hand: play the finger", line: "The thumb is on the right now.", rounds: 8, make: () => { const f = 1 + Math.floor(Math.random() * 5); const t = LPOS[5 - f];
-    return { prompt: `<div class="cols">${handSvg("L", [f], 100)}</div>Finger ${f}`, lit: LPOS, ok: n => n === t, show: [t], bad: () => `Finger ${f}: count from the thumb.` }; } }),
+    return { prompt: `<div class="cols">${handSvg("L", [f], 130)}</div>Finger ${f}`, lit: LPOS, ok: n => n === t, show: [t], bad: () => `Finger ${f}: count from the thumb.` }; } }),
   S.summary("2.3", "You know your fingers", ["Thumb is 1, little finger is 5", "Curved fingers, play on the tips", "Right thumb on middle C"], "2.4"),
 ];
 
