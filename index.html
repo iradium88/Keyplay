@@ -519,7 +519,7 @@ kbEl.addEventListener("pointerup", endPointer); kbEl.addEventListener("pointerca
 // computer keys: A W S E D F T G Y H U J K = C..C, starting at C4 of the shown range
 const KEYMAP = "awsedftgyhujk";
 document.addEventListener("keydown", e => {
-  if(e.repeat || e.metaKey || e.ctrlKey || e.target.tagName === "INPUT") return;
+  if(e.repeat || e.metaKey || e.ctrlKey || e.target.closest?.("input, textarea, [contenteditable]")) return;
   const i = KEYMAP.indexOf(e.key.toLowerCase()); if(i < 0) return;
   press(base + 12 + i);
 });
