@@ -275,6 +275,9 @@ button[data-li]{position:relative;padding-right:34px;padding-left:34px}
 .bbar.on{background:var(--coral);border-color:var(--coral)}
 .bv{font-size:11px;font-weight:700;color:#A9A9B8;margin-bottom:3px;white-space:nowrap}.bv.on{color:var(--ink)}
 .bx{position:absolute;bottom:-20px;font-size:11px;color:var(--ink2)}
+/* make "how many rounds" obvious on every multi-round screen */
+.card #rd.muted{font-weight:700;color:var(--ink);font-size:15px}
+.card #rd.muted::before{content:"Round "}
 </style>
 </head>
 <body>
@@ -2439,7 +2442,7 @@ NEWL["2.1"] = [
     ? { prompt: "A black key in a group of 2", ok: n => [1, 3].includes(pc(n)), show: [49, 51, 61, 63], bad: () => "That one's in a group of 3." }
     : { prompt: "A black key in a group of 3", ok: n => [6, 8, 10].includes(pc(n)), show: [54, 56, 58, 66, 68, 70], bad: () => "That one's in a group of 2." } }),
   S.info("Meet C", "The white key just left of the two black keys.", { keys: true, hints: [48, 60, 72] }),
-  S.find({ kicker: " ", title: "Find a C", line: "Look for the two black keys.", rounds: 3, make: () => ({ prompt: "Play a C", ok: n => pc(n) === 0, show: [48, 60, 72], bad: () => "C sits just left of the two black keys." }) }),
+  S.find({ kicker: " ", title: "Find a C, 3 times", line: "Any C. Look for the two black keys.", rounds: 3, make: () => ({ prompt: "Play a C", ok: n => pc(n) === 0, show: [48, 60, 72], bad: () => "C sits just left of the two black keys." }) }),
   S.info("Seven letters", "C D E F G A B, then C again.", { keys: true, labels: true }),
   S.follow("Play C to C", "Say each name as you play.", { seq: whitesIn(60, 72), names: true, labels: true, done: "Eight keys, seven names. Then it starts again." }),
   S.quiz("What comes after G?", ["A", "H", "C"], 0, "Right. After G, the letters start again at A."),
