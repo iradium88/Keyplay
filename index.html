@@ -281,6 +281,14 @@ body.v-lesson :is(#pb,#dl):disabled::before{background:#A9A9B8}
 /* the heard ✓ must not change the button's size */
 button[data-li]{position:relative;padding-right:34px;padding-left:34px}
 .choice.heard:after{position:absolute;right:14px;top:50%;transform:translateY(-50%)}
+.charts2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.bcap{font-size:13px;font-weight:600;color:var(--ink2);text-align:left;margin-bottom:6px;min-height:34px}
+.bars4{display:flex;align-items:flex-end;gap:6px;height:150px;border-bottom:3px solid var(--line);padding-top:18px}
+.bcol{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;position:relative}
+.bbar{width:100%;background:var(--soft);border:2px solid var(--line);border-bottom:0;border-radius:6px 6px 0 0;transition:background .2s,border-color .2s}
+.bbar.on{background:var(--coral);border-color:var(--coral)}
+.bv{font-size:11px;font-weight:700;color:#A9A9B8;margin-bottom:3px;white-space:nowrap}.bv.on{color:var(--ink)}
+.bx{position:absolute;bottom:-20px;font-size:11px;color:var(--ink2)}
 </style>
 </head>
 <body>
@@ -1839,29 +1847,33 @@ const L19 = [
         () => { $("#fb").className = "feedback good"; $("#fb").textContent = "They feel the same size, though one adds 110 Hz and the other 440. Both are ×2."; enableNext(); });
   }},
   { render(){
-      const tw = [110, 220, 440, 880], hzX = tw.map(f => 4 + (f - 110) / 770 * 92), earX = tw.map((_, i) => 4 + i * 92 / 3);
-      const row = (cap, xs, gaps) => `<div class="axcap">${cap}</div><div class="axis2">${xs.map((x, i) => `<i data-d="${i}" style="left:${x.toFixed(1)}%"><b>${tw[i]}</b></i>`).join("")}${gaps.map((g, i) => `<em data-g="${i}" style="left:${((xs[i] + xs[i + 1]) / 2).toFixed(1)}%">${g}</em>`).join("")}</div>`;
-      h(`<h1>Bigger in Hz, same to your ear</h1><p>Tap Play: four notes, each an octave higher. Watch both rows.</p>
-      <div class="card">${row("Measured in Hz, the jumps grow", hzX, ["+110", "+220", "+440"])}${row("What you hear, and the piano: equal jumps", earX, ["octave", "octave", "octave"])}</div>
+      const tw = [110, 220, 440, 880];
+      const chart = (cap, hs, labs) => `<div class="bchart"><div class="bcap">${cap}</div><div class="bars4">${hs.map((v, i) => `<div class="bcol"><span class="bv" data-d="${i}">${labs[i]}</span><div class="bbar" data-d="${i}" style="height:${v}%"></div><span class="bx">${i + 1}</span></div>`).join("")}</div></div>`;
+      h(`<h1>Hz doubles, pitch climbs evenly</h1><p>Tap Play: four notes, each an octave higher. Watch both charts.</p>
+      <div class="card"><div class="charts2">${chart("Hz: each bar doubles", tw.map(f => f / 880 * 100), tw.map(String))}${chart("How high it sounds: even steps", [25, 50, 75, 100], ["start", "+1 oct", "+2 oct", "+3 oct"])}</div><p class="muted" style="margin:26px 0 0;font-size:13px;text-align:center">Notes 1 to 4, as they play</p></div>
       <div class="row" style="justify-content:center;margin-top:12px"><button class="btn ghost" id="hear">Play</button></div>
       <div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
       const tms = [];
-      $("#hear").onclick = () => { tms.forEach(clearTimeout); screenEl.querySelectorAll(".axis2 .on").forEach(x => x.classList.remove("on"));
-        [45, 57, 69, 81].forEach((n, i) => tms.push(setTimeout(() => { playNote(n, 0.8); screenEl.querySelectorAll(`[data-d="${i}"]${i ? `,[data-g="${i - 1}"]` : ""}`).forEach(x => x.classList.add("on")); }, i * 1000)));
-        tms.push(setTimeout(() => { $("#fb").className = "feedback good"; $("#fb").textContent = "Each jump doubles the Hz, so the Hz gaps grow. Your ear hears every doubling as the same step. That's why every octave on the piano is the same 12 keys."; enableNext(); }, 3600)); };
+      $("#hear").onclick = () => { tms.forEach(clearTimeout); screenEl.querySelectorAll(".bars4 .on").forEach(x => x.classList.remove("on"));
+        [45, 57, 69, 81].forEach((n, i) => tms.push(setTimeout(() => { playNote(n, 0.8); screenEl.querySelectorAll(`[data-d="${i}"]`).forEach(x => x.classList.add("on")); }, i * 1000)));
+        tms.push(setTimeout(() => { $("#fb").className = "feedback good"; $("#fb").textContent = "The Hz shot up: 110 to 880. But you heard four even steps. Your ear hears doubling as one step, so every octave on the piano is the same 12 keys."; enableNext(); }, 3600)); };
       this.cleanup = () => tms.forEach(clearTimeout);
   }},
   { render(){
-      h(`<h1>Start at 300 Hz. Go up two octaves.</h1>
+      h(`<h1>Start at 300 Hz. Go up two octaves.</h1><p>Tap an answer to hear the jump from 300 Hz.</p>
+      <div class="row" style="justify-content:center;margin-bottom:12px"><button class="btn ghost" id="hear">Hear 300 Hz</button></div>
       <div class="choices">
-        <button class="choice" data-a="0">900 Hz</button>
-        <button class="choice" data-a="1">1200 Hz</button>
-        <button class="choice" data-a="0">600 Hz</button>
+        <button class="choice" data-a="0" data-f="900">900 Hz</button>
+        <button class="choice" data-a="1" data-f="1200">1200 Hz</button>
+        <button class="choice" data-a="0" data-f="600">600 Hz</button>
       </div><div class="feedback" id="fb"></div>${footer("Continue", false)}`); wireFooter();
+      let tm; const jump = (...fs) => { clearTimeout(tm); tAllOff(); let i = 0; const step = () => { tAllOff(); if(i < fs.length){ tOn("o" + i, fs[i], "soft", 0.14); i++; tm = setTimeout(step, 650); } }; step(); };
+      $("#hear").onclick = () => jump(300);
       screenEl.querySelectorAll(".choice").forEach(b => b.onclick = () => {
-        if(b.dataset.a === "1"){ b.classList.add("right"); $("#fb").className = "feedback good"; $("#fb").textContent = "Right. ×2 = 600, then ×2 again = 1200."; enableNext(); }
-        else { b.classList.add("wrong"); $("#fb").className = "feedback bad"; $("#fb").textContent = b.textContent.startsWith("600") ? "That's one octave. Go up once more." : "Each octave is ×2, not +300."; }
+        if(b.dataset.a === "1"){ jump(300, 600, 1200); b.classList.add("right"); $("#fb").className = "feedback good"; $("#fb").textContent = "Right. ×2 = 600, then ×2 again = 1200. Hear the two equal octave jumps."; enableNext(); }
+        else { jump(300, +b.dataset.f); b.classList.add("wrong"); $("#fb").className = "feedback bad"; $("#fb").textContent = b.dataset.f === "600" ? "That's one octave. Go up once more." : "That's not an octave jump. Each octave is ×2, not +300."; }
       });
+      this.cleanup = () => { clearTimeout(tm); tAllOff(); };
   }},
   { render(){
       h(`<h1>Which jump feels bigger?</h1><p>Both add 100 Hz. Hear them, then pick.</p>
