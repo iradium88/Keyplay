@@ -241,20 +241,6 @@ body.v-lesson :is(#pb,#dl):disabled::before{background:#A9A9B8}
 /* Continue: pops when it unlocks */
 @keyframes readypop{0%{transform:scale(1)}35%{transform:scale(1.07);box-shadow:0 4px 0 #000,0 0 0 8px color-mix(in srgb,var(--good) 30%,transparent)}100%{transform:scale(1)}}
 #next.ready{background:var(--good);box-shadow:0 4px 0 #157A4C;animation:readypop .6s ease-out 2}
-/* feedback */
-.fbbtn{background:none;border:0;padding:4px;margin-left:-6px;color:#A9A9B8;cursor:pointer;position:relative;display:flex}
-.fbbtn[data-r="good"]{color:var(--good)}.fbbtn[data-r="bad"]{color:var(--bad)}.fbbtn[data-r="note"]{color:var(--coral)}
-.fbsheet{position:fixed;inset:0;background:rgba(10,10,20,.35);display:flex;align-items:flex-end;justify-content:center;z-index:50}
-.fbcard{background:var(--card);width:100%;max-width:520px;border-radius:20px 20px 0 0;padding:16px 16px 22px;display:flex;flex-direction:column;gap:12px;text-align:left}
-.fbtop{display:flex;justify-content:space-between;align-items:center}
-.fbrate{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.fbrate button{font:600 16px inherit;font-family:inherit;padding:12px;border-radius:14px;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
-.fbrate button.on[data-r="good"]{border-color:var(--good);background:color-mix(in srgb,var(--good) 12%,var(--card))}
-.fbrate button.on[data-r="bad"]{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,var(--card))}
-.fbcard textarea{font:16px inherit;font-family:inherit;padding:12px;border-radius:14px;border:2px solid var(--line);background:var(--paper);color:var(--ink);resize:vertical}
-.fbcard .btn{width:100%;min-width:0}
-.fbhome{display:flex;flex-direction:column;gap:4px;margin:-8px 0 22px}.fbhome span{color:var(--ink2);font-size:14px}
-.fbhome .row{display:flex;justify-content:flex-start;gap:8px;margin-top:8px}.fbhome .btn{min-width:0;padding:10px 16px;font-size:15px}
 /* stage 1 visuals */
 .choice.tim{display:flex;align-items:center;gap:14px;text-align:left}.choice.tim svg{flex:none}
 .ladder{display:flex;flex-direction:column-reverse;gap:3px;max-width:320px;margin:0 auto}
@@ -2438,43 +2424,6 @@ S.nameNote = o => ({ render(){ const N = o.rounds || 8; let r = 0, right = 0, fi
 // play the note shown on the staff (scored)
 S.readPlay = o => S.find({ ...o, staff: true, fit: o.fit, make: () => { const n = rnd(o.pool); return { prompt: "", staff: { clef: o.clef || "treble", notes: [{ n, d: "w" }], width: 220 }, ok: x => x === n, show: [n], bad: x => `That's ${nm(x)}. Try again.` }; } });
 
-// ===================== review feedback on every screen =====================
-const FBKEY = "keyplay.feedback.v1";
-const fbLoad = () => { try { return JSON.parse(localStorage.getItem(FBKEY)) || {}; } catch(e){ return {}; } };
-const fbSave = d => { try { localStorage.setItem(FBKEY, JSON.stringify(d)); } catch(e){} };
-const $d = q => document.querySelector(q);
-const fbId = () => `${lessonId}.${idx + 1}`;
-{ const b = document.createElement("button"); b.id = "fbbtn"; b.className = "fbbtn"; b.setAttribute("aria-label", "Feedback on this screen");
-  b.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg>';
-  document.querySelector(".lessonbar").appendChild(b); b.onclick = fbOpen; }
-function fbMark(){ const f = fbLoad()[fbId()]; const b = $d("#fbbtn"); if(b) b.dataset.r = f ? f.r || "note" : ""; }
-const _go = go; go = function(i){ _go(i); fbMark(); $d("#fbsheet")?.remove(); };
-function fbOpen(){
-  if($d("#fbsheet")) return $d("#fbsheet").remove();
-  const id = fbId(), all = fbLoad(), f = all[id] || {}; let r = f.r || "";
-  const el = document.createElement("div"); el.id = "fbsheet"; el.className = "fbsheet";
-  el.innerHTML = `<div class="fbcard"><div class="fbtop"><b>Screen ${id}</b><button class="x" id="fbx">✕</button></div>
-    <div class="fbrate"><button data-r="good">👍 Good</button><button data-r="bad">👎 Bad</button></div>
-    <textarea id="fbt" rows="3" placeholder="What should change? (optional)">${(f.t || "").replace(/</g, "&lt;")}</textarea>
-    <button class="btn coral" id="fbs">Save</button></div>`;
-  document.body.appendChild(el);
-  const mark = () => el.querySelectorAll("[data-r]").forEach(x => x.classList.toggle("on", x.dataset.r === r));
-  el.querySelectorAll("[data-r]").forEach(x => x.onclick = () => { r = r === x.dataset.r ? "" : x.dataset.r; mark(); }); mark();
-  el.onclick = e => { if(e.target === el) el.remove(); };
-  $d("#fbx").onclick = () => el.remove();
-  $d("#fbs").onclick = () => { const d = fbLoad(), t = $d("#fbt").value.trim(); if(r || t) d[id] = { r, t, at: new Date().toISOString() }; else delete d[id]; fbSave(d); el.remove(); fbMark(); };
-}
-const fbSort = (a, b) => a.split(".").map(Number).reduce((s, x, i) => s || x - b.split(".").map(Number)[i], 0);
-function fbText(){ const d = fbLoad(); return Object.keys(d).sort(fbSort).map(k => `${k} ${d[k].r === "good" ? "👍" : d[k].r === "bad" ? "👎" : "•"} ${d[k].t || ""}`.trim()).join("\n"); }
-const _home = showHome; showHome = function(){
-  _home(); const n = Object.keys(fbLoad()).length; if(!n) return;
-  const c = document.createElement("div"); c.className = "card fbhome";
-  c.innerHTML = `<b>Your feedback</b><span>${n} screen${n > 1 ? "s" : ""}</span><div class="row"><button class="btn" id="fbsend">Send</button><button class="btn ghost" id="fbcopy">Copy</button><button class="btn ghost" id="fbclear">Clear</button></div>`;
-  screenEl.querySelector(".contcard")?.after(c);
-  $("#fbcopy").onclick = async () => { try { await navigator.clipboard.writeText(fbText()); $("#fbcopy").textContent = "Copied"; } catch(e){ prompt("Copy this:", fbText()); } };
-  $("#fbsend").onclick = () => { const body = "Feedback from the app\n\n" + fbText(); window.open("https://github.com/iradium88/Keyplay/issues/new?title=" + encodeURIComponent("Screen feedback " + new Date().toISOString().slice(0, 10)) + "&labels=feedback&body=" + encodeURIComponent(body.slice(0, 6000)), "_blank"); };
-  $("#fbclear").onclick = () => { if(confirm("Clear all feedback?")){ fbSave({}); showHome(); } };
-};
 
 // ===================== Stage 2: Foundations =====================
 const C4 = 60, CPOS = [60, 62, 64, 65, 67], LPOS = [48, 50, 52, 53, 55];
